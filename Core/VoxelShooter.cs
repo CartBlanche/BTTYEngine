@@ -44,9 +44,7 @@ namespace VoxelShooter
 
         int scrollColumn;
 
-        MouseState lms;
-        KeyboardState lks;
-        GamePadState lgs;
+        InputManager inputManager = new InputManager();
 
         SpriteFont font;
 
@@ -141,8 +139,9 @@ namespace VoxelShooter
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
-            // Allows the game to exit
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+            inputManager.BeginInputProcessing();
+
+            if (inputManager.IsExiting())
                 this.Exit();
 
             if (!IsActive) return;
@@ -170,29 +169,11 @@ namespace VoxelShooter
             }
             else if(scrollSpeed>0f) scrollSpeed -= 0.01f;
 
-            MouseState cms = Mouse.GetState();
-            KeyboardState cks = Keyboard.GetState();
-            GamePadState cgs = GamePad.GetState(PlayerIndex.One);
+            gameHero.Move(inputManager.MoveDirection());
 
-            Vector2 virtualJoystick = Vector2.Zero;
-            if (cks.IsKeyDown(Keys.W) || cks.IsKeyDown(Keys.Up)) virtualJoystick.Y = -1;
-            if (cks.IsKeyDown(Keys.A) || cks.IsKeyDown(Keys.Left)) virtualJoystick.X = -1;
-            if (cks.IsKeyDown(Keys.S) || cks.IsKeyDown(Keys.Down)) virtualJoystick.Y = 1;
-            if (cks.IsKeyDown(Keys.D) || cks.IsKeyDown(Keys.Right)) virtualJoystick.X = 1;
-            //if (virtualJoystick.Length() > 0f) virtualJoystick.Normalize();
-            //if (cgs.ThumbSticks.Left.Length() > 0.1f)
-            //{
-            //    virtualJoystick = cgs.ThumbSticks.Left;
-            //    virtualJoystick.Y = -virtualJoystick.Y;
-            //}
+            if (inputManager.IsFiring()) gameHero.Fire();
 
-            gameHero.Move(virtualJoystick);
-
-            if (cks.IsKeyDown(Keys.Z)) gameHero.Fire();
-
-            lms = cms;
-            lks = cks;
-            lgs = cgs;
+            inputManager.EndInputProcessing();
 
             gameCamera.Update(gameTime, gameWorld);
             gameWorld.Update(gameTime, gameCamera);
