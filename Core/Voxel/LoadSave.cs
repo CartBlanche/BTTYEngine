@@ -17,22 +17,24 @@ namespace VoxelShooter
        
             byte[] buffer;
 
-            using (FileStream gstr = new FileStream(fn, FileMode.Open))
+            // TitleContainer.OpenStream is the cross-platform way to open content files in MonoGame.
+            // It may return a non-seekable stream on some platforms, so copy into a MemoryStream first.
+            using Stream rawStream = TitleContainer.OpenStream(fn);
+            using MemoryStream gstr = new MemoryStream();
+            rawStream.CopyTo(gstr);
+
+            byte[] lb = new byte[4];
+            gstr.Position = gstr.Length - 4;
+            gstr.ReadExactly(lb, 0, 4);
+            int msgLength = BitConverter.ToInt32(lb, 0);
+
+            buffer = new byte[msgLength];
+
+            gstr.Position = 0;
+
+            using (GZipStream str = new GZipStream(gstr, CompressionMode.Decompress))
             {
-                byte[] lb = new byte[4];
-                gstr.Position = gstr.Length - 4;
-                gstr.Read(lb, 0, 4);
-                int msgLength = BitConverter.ToInt32(lb, 0);
-
-                buffer = new byte[msgLength];
-
-                gstr.Position = 0;
-
-                using (GZipStream str = new GZipStream(gstr, CompressionMode.Decompress))
-                {
-
-                    str.Read(buffer, 0, msgLength);
-                }
+                str.ReadExactly(buffer, 0, msgLength);
             }
 
             int pos = 0;

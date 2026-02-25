@@ -1,7 +1,7 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 using System.IO;
 using System.Xml;
-using System.Drawing;
 using Microsoft.Xna.Framework.Content.Pipeline;
 using Microsoft.Xna.Framework.Content.Pipeline.Graphics;
 using Microsoft.Xna.Framework.Content.Pipeline.Processors;
@@ -64,13 +64,7 @@ namespace TiledContentPipeline
                 //    asset);
 
 				// load the image so we can compute the individual tile source rectangles
-				int imageWidth = 0;
-				int imageHeight = 0;
-				using (Image image = Image.FromFile(path))
-				{
-					imageWidth = image.Width;
-					imageHeight = image.Height;
-				}
+				GetImageSize(path, out int imageWidth, out int imageHeight);
 
 				// remove the margins from our calculations
 				imageWidth -= tileSet.Margin;
@@ -117,6 +111,50 @@ namespace TiledContentPipeline
 			}
 
 			return content;
+		}
+
+		/// <summary>
+		/// Reads image dimensions from PNG or BMP file headers without requiring System.Drawing.
+		/// </summary>
+		private static void GetImageSize(string path, out int width, out int height)
+		{
+			width = 0;
+			height = 0;
+			using var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
+			using var br = new BinaryReader(fs);
+
+			// PNG: signature is 8 bytes, then IHDR chunk (4-byte length + 4-byte 'IHDR' + 4-byte w + 4-byte h)
+			if (fs.Length >= 24)
+			{
+				byte[] sig = br.ReadBytes(8);
+				if (sig[0] == 0x89 && sig[1] == 0x50 && sig[2] == 0x4E && sig[3] == 0x47)
+				{
+					// Skip 4-byte chunk length + 4-byte 'IHDR'
+					br.ReadBytes(8);
+					// Width and height are big-endian
+					byte[] wb = br.ReadBytes(4);
+					byte[] hb = br.ReadBytes(4);
+					if (BitConverter.IsLittleEndian) { Array.Reverse(wb); Array.Reverse(hb); }
+					width = BitConverter.ToInt32(wb, 0);
+					height = BitConverter.ToInt32(hb, 0);
+					return;
+				}
+
+				// BMP: signature 'BM', width at offset 18, height at offset 22 (little-endian)
+				fs.Seek(0, SeekOrigin.Begin);
+				br.BaseStream.Position = 0;
+				if (sig[0] == 0x42 && sig[1] == 0x4D && fs.Length >= 26)
+				{
+					fs.Seek(18, SeekOrigin.Begin);
+					width = br.ReadInt32();
+					height = Math.Abs(br.ReadInt32());
+					return;
+				}
+			}
+
+			// Fallback: try JPEG (SOF0 marker) – or throw for unsupported formats
+			throw new System.NotSupportedException(
+				$"Cannot read dimensions from image '{path}'. Only PNG and BMP tile sheet files are supported.");
 		}
 	}
 }
