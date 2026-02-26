@@ -12,108 +12,112 @@ namespace VoxelShooter
     {
         const int MAX_POWERUPS = 100;
 
+        // Cube geometry constants — 24 verts / 36 indices per cube (6 faces × 4 verts / 6 faces × 6 indices)
+        const int VERTS_PER_CUBE  = 24;
+        const int INDICES_PER_CUBE = 36;
+
         public static PowerupController Instance;
 
         GraphicsDevice graphicsDevice;
 
-        VertexPositionNormalTexture[] verts = new VertexPositionNormalTexture[MAX_POWERUPS * 4];
-        short[] indexes = new short[MAX_POWERUPS * 6];
+        // Shared unit-cube centred at origin, built once; world matrix moves/rotates each pickup
+        VertexPositionNormalColor[] _unitCubeVerts   = new VertexPositionNormalColor[VERTS_PER_CUBE];
+        short[]                     _unitCubeIndices = new short[INDICES_PER_CUBE];
 
-        List<Powerup> Powerups; 
-
-        int currentPowerupCount = 0;
+        List<Powerup> Powerups;
 
         BasicEffect drawEffect;
 
-        Texture2D texGlow;
+        // Camera matrices cached from last Update so Draw can use them
+        Matrix _cameraView;
+        Matrix _cameraProjection;
 
-        double updateTime = 0;
-        double updateTargetTime = 0;
-
-        int parts = 0;
-
-        static short[] faceIndices = new short[] {
-                                        0,  1,  2,  // front face
-                                        1,  3,  2};
+        // Global time for the pulse glow animation
+        float _pulseTime = 0f;
 
         public PowerupController(GraphicsDevice gd)
         {
             Instance = this;
-
             graphicsDevice = gd;
 
             Powerups = new List<Powerup>(MAX_POWERUPS);
             for (int i = 0; i < MAX_POWERUPS; i++) Powerups.Add(new Powerup());
-
         }
 
         public void LoadContent(ContentManager content)
         {
-            texGlow = content.Load<Texture2D>("glow");
+            // Build the unit cube once; we colour it white so DiffuseColor drives the glow tint
+            ParticleCube.Create(ref _unitCubeVerts, ref _unitCubeIndices, Vector3.Zero, 0, 0.5f, Color.White);
 
             drawEffect = new BasicEffect(graphicsDevice)
             {
-                TextureEnabled = true,
-                Texture = texGlow,
-                DiffuseColor = Color.Yellow.ToVector3(),
+                VertexColorEnabled = true,
+                LightingEnabled    = false,
             };
-           
         }
 
         public void Update(GameTime gameTime, ICamera gameCamera, VoxelWorld gameWorld, Hero gameHero, float scrollPos)
         {
-            
+            float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            _pulseTime += dt;
+
             foreach (Powerup p in Powerups.Where(part => part.Active))
             {
                 p.Update(gameTime, gameWorld, gameHero, scrollPos);
             }
 
-            updateTime += gameTime.ElapsedGameTime.TotalMilliseconds;
-            if (updateTime >= updateTargetTime)
-            {
-                updateTime = 0;
-
-                parts = 0;
-                foreach (Powerup p in Powerups.Where(part => part.Active))
-                {
-                    Vector3 topLeftFront = new Vector3(-1.0f, 1.0f, 0f) * 1f;
-                    Vector3 bottomLeftFront = new Vector3(-1.0f, -1.0f, 0f) * 1f;
-                    Vector3 topRightFront = new Vector3(1.0f, 1.0f, 0f) * 1f;
-                    Vector3 bottomRightFront = new Vector3(1.0f, -1.0f, 0f) * 1f;
-                    verts[(parts * 4) + 0] = new VertexPositionNormalTexture(p.Position + topLeftFront, Vector3.Normalize(topLeftFront), new Vector2(0, 0));
-                    verts[(parts * 4) + 1] = new VertexPositionNormalTexture(p.Position + bottomLeftFront, Vector3.Normalize(bottomLeftFront), new Vector2(0, 1));
-                    verts[(parts * 4) + 2] = new VertexPositionNormalTexture(p.Position + topRightFront, Vector3.Normalize(topRightFront), new Vector2(1, 0));
-                    verts[(parts * 4) + 3] = new VertexPositionNormalTexture(p.Position + bottomRightFront, Vector3.Normalize(bottomRightFront), new Vector2(1, 1));
-
-                    for (int i = 0; i < 6; i++) indexes[(parts * 6) + i] = (short)((parts * 4) + faceIndices[i]);
-
-                    parts+=1;
-                }
-            }
-
-            currentPowerupCount = Powerups.Count(part => part.Active);
-
-            drawEffect.World = gameCamera.WorldMatrix;
-            drawEffect.View = gameCamera.ViewMatrix;
-            drawEffect.Projection = gameCamera.ProjectionMatrix;
+            _cameraView       = gameCamera.ViewMatrix;
+            _cameraProjection = gameCamera.ProjectionMatrix;
         }
 
         public void Draw()
         {
-            if (currentPowerupCount == 0) return;
-            foreach (EffectPass pass in drawEffect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
+            var activePowerups = Powerups.Where(p => p.Active).ToList();
+            if (activePowerups.Count == 0) return;
 
-                graphicsDevice.DrawUserIndexedPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, verts, 0, currentPowerupCount * 4, indexes, 0, currentPowerupCount * 2);
+            // Pulse: Yellow (dim) → White (full brightness) for a real glow swing
+            float pulse     = 0.5f + 0.5f * (float)Math.Sin(_pulseTime * 4.0);
+            Color glowColor = Color.Lerp(Color.Yellow, Color.White, pulse);
+
+            // Rebuild the unit-cube verts with the current glow colour each frame
+            ParticleCube.Create(ref _unitCubeVerts, ref _unitCubeIndices, Vector3.Zero, 0, 0.5f, glowColor);
+
+            drawEffect.View       = _cameraView;
+            drawEffect.Projection = _cameraProjection;
+
+            // Additive blending makes bright colours accumulate to white — the real glow trick
+            var prevBlend        = graphicsDevice.BlendState;
+            var prevDepthStencil = graphicsDevice.DepthStencilState;
+            graphicsDevice.BlendState        = BlendState.Additive;
+            graphicsDevice.DepthStencilState = DepthStencilState.DepthRead; // don't write depth so cubes don't punch holes
+
+            // Draw each active powerup individually with its own World matrix (spin + translate)
+            foreach (Powerup p in activePowerups)
+            {
+                drawEffect.World =
+                    Matrix.CreateRotationY(p.Rotation) *
+                    Matrix.CreateRotationX(p.Rotation * 0.6f) *
+                    Matrix.CreateTranslation(p.Position);
+
+                foreach (EffectPass pass in drawEffect.CurrentTechnique.Passes)
+                {
+                    pass.Apply();
+                    graphicsDevice.DrawUserIndexedPrimitives<VertexPositionNormalColor>(
+                        PrimitiveType.TriangleList,
+                        _unitCubeVerts,  0, VERTS_PER_CUBE,
+                        _unitCubeIndices, 0, INDICES_PER_CUBE / 3);
+                }
             }
+
+            graphicsDevice.BlendState        = prevBlend;
+            graphicsDevice.DepthStencilState = prevDepthStencil;
         }
 
         public void Spawn(Vector3 pos)
         {
             Powerup p = Powerups.FirstOrDefault(part => !part.Active);
             if (p == null) return;
-            p.Spawn(pos, new Vector3(Helper.RandomFloat(-0.01f,0.01f), Helper.RandomFloat(-0.01f,0.01f),0f));
+            p.Spawn(pos, new Vector3(Helper.RandomFloat(-0.01f, 0.01f), Helper.RandomFloat(-0.01f, 0.01f), 0f));
         }
 
         internal void Reset()

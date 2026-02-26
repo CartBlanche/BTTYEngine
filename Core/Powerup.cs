@@ -13,10 +13,7 @@ namespace VoxelShooter
         public bool Active;
         public Vector3 Position;
         public Vector3 Speed;
-
-        bool affectedByGravity;
-
-
+        public float Rotation;
 
         public Powerup()
         {
@@ -27,6 +24,8 @@ namespace VoxelShooter
         {
 
             Position += Speed;
+            Rotation += 0.04f;
+            if (Rotation > MathHelper.TwoPi) Rotation -= MathHelper.TwoPi;
             if(Position.X < scrollPos - 75f) Active = false;
 
             if (Vector3.Distance(gameHero.Position, Position) < 25f) Position = Vector3.Lerp(Position, gameHero.Position, 0.05f);
