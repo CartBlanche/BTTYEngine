@@ -28,6 +28,9 @@ namespace VoxelShooter
 
         float moveSpeed = 0.5f;
 
+        // Visual banking angle — smoothly follows vertical speed for a natural tilt
+        float _bankAngle = 0f;
+
         double fireCooldown = 0;
         double rocketCooldown = 0;
         public float hitAlpha = 0f;
@@ -111,6 +114,10 @@ namespace VoxelShooter
 
             drawEffect.Projection = gameCamera.ProjectionMatrix;
             drawEffect.View = gameCamera.ViewMatrix;
+
+            // Bank into vertical movement: positive Y = down the screen, so nose dips down → positive Z rotation
+            float targetBank = Speed.Y * 0.4f;
+            _bankAngle = MathHelper.Lerp(_bankAngle, targetBank, 0.12f);
         }
 
         public void DoHit(Vector3 pos, Projectile proj)
@@ -125,7 +132,7 @@ namespace VoxelShooter
 
         public void Draw(GraphicsDevice gd)
         {
-            drawEffect.World = Matrix.CreateTranslation(Position);
+            drawEffect.World = Matrix.CreateRotationZ(_bankAngle) * Matrix.CreateTranslation(Position);
 
             drawEffect.DiffuseColor = new Vector3(1f, 1f - hitAlpha, 1f - hitAlpha);
             foreach (EffectPass pass in drawEffect.CurrentTechnique.Passes)
