@@ -46,11 +46,13 @@ namespace VoxelShooter
 
         public override void DoCollide(bool x, bool y, bool z, Vector3 checkPosition, Hero gameHero, VoxelWorld gameWorld, bool withPlayer)
         {
-            //gameWorld.Explode(checkPosition, 5f);
+            // Bounce off terrain and take damage; die (dropping XP) after enough impacts
+            if (x) Speed.X = -Speed.X;
+            if (y) Speed.Y = -Speed.Y;
+            if (z) Speed.Z = -Speed.Z;
 
-            //Die();
-
-            base.DoCollide(x, y, z, checkPosition, gameHero, gameWorld, withPlayer);
+            Health -= 3f;
+            if (Health <= 0f) Die();
         }
 
         public override void Update(GameTime gameTime, VoxelWorld gameWorld, Hero gameHero)

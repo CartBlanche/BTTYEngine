@@ -32,6 +32,8 @@ namespace VoxelShooter
         float dir = 1f;
 
         float bob = 0f;
+        float bobPhase = 0f;
+        float spawnY;   // anchor so bob is relative, not cumulative
 
         Vector3 lineEnd;
 
@@ -52,6 +54,7 @@ namespace VoxelShooter
 
             radius = 20f;
 
+            spawnY = pos.Y;
             Enemy e = null;
             if(Type== WaveType.Circle) e = EnemyController.Instance.Spawn(EnemyType, Position + new Vector3(0, 0, 200f), props);
             if (Type == WaveType.Line) e = EnemyController.Instance.Spawn(EnemyType, (Position - (lineEnd/2f)) + new Vector3(0, 0, 200f), props);
@@ -71,6 +74,14 @@ namespace VoxelShooter
             //if (EnemyType == EnemyType.Squid) Position.Y += (bob * 0.05f);
 
             if (scrollSpeed <= 0f) Position.X -= 0.1f;
+
+            // Bob the whole Squid formation sinusoidally
+            if (EnemyType == EnemyType.Squid)
+            {
+                bobPhase += 0.03f;
+                if (bobPhase > MathHelper.TwoPi) bobPhase -= MathHelper.TwoPi;
+                Position.Y = spawnY + (float)Math.Sin(bobPhase) * 12f;
+            }
 
             switch (Type)
             {
