@@ -59,6 +59,8 @@ Two vertical bars on the left side of the screen:
 
 ## Controls
 
+### Keyboard
+
 | Key | Action |
 |-----|--------|
 | `W` / `↑` | Move up |
@@ -66,7 +68,17 @@ Two vertical bars on the left side of the screen:
 | `A` / `←` | Move left |
 | `D` / `→` | Move right |
 | `Z` | Fire |
+| `Tab` | Toggle between side-scrolling and isometric camera |
 | `Escape` | Quit |
+
+### Gamepad
+
+| Input | Action |
+|-------|--------|
+| Left stick | Move |
+| Right trigger / `A` | Fire |
+| Right stick click (RS / R3) | Toggle between side-scrolling and isometric camera |
+| `Back` | Quit |
 
 ---
 
@@ -141,7 +153,10 @@ The content pipeline runs automatically as part of the build, no separate MGCB s
 
 ```
 VoxelShooter/
-├── Core/               - All game source code and content
+├── BTTYEngine/         - Reusable voxel game engine (cameras, voxel world, particles, input)
+│   └── Voxel/          - VoxelWorld, Chunk, LoadSave and supporting types
+├── Core/               - VoxelShooter game code and content
+│   ├── Enemies/        - Enemy types (Asteroid, Omega, Squid, Turret)
 │   └── Content/        - .mgcb file and all game assets (.vxs, .png, .tmx, etc.)
 ├── Desktop/            - DesktopGL entry point (net9.0)
 ├── Windows/            - WindowsDX entry point (net9.0-windows)
@@ -153,6 +168,24 @@ VoxelShooter/
 ├── TiledLib/               - TiledLib source
 └── TiledContentPipeline/   - TiledContentPipeline source
 ```
+
+`Core` references `BTTYEngine` via a `<ProjectReference>`. The platform projects (`Desktop`, `Windows`, etc.) reference `Core` as before — nothing changes from their perspective.
+
+---
+
+## BTTYEngine
+
+The engine lives in `BTTYEngine/` and is intentionally game-agnostic. VoxelShooter is its first consumer, but the plan is for future games to reference it directly via `<ProjectReference>` from their own repos.
+
+What's in there:
+
+- **Camera system** — `ICamera` interface, `BaseCamera`, `SideScrollingCamera`, `IsometricCamera`, and `CameraTransitionManager` for smooth blending between any two cameras
+- **Voxel engine** — `VoxelWorld`, `Chunk`, mesh building, frustum culling, explosion system
+- **Particles** — pooled `ParticleController` and `ParticleCube` for voxel-style debris
+- **Input** — `InputManager` wrapping keyboard and gamepad
+- **Utilities** — `Helper` (random, geometry helpers)
+
+The namespace is still `VoxelShooter` for now — a rename to `BTTYEngine` is planned when the engine moves to its own repo or NuGet package.
 
 ---
 
