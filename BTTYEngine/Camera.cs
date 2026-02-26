@@ -3,7 +3,7 @@
 namespace VoxelShooter
 {
     /// <summary>
-    /// Backward-compatibility shim — prefer <see cref="SideScrollingCamera"/> for new code.
+    /// Backward-compatibility shim, prefer <see cref="SideScrollingCamera"/> for new code.
     /// </summary>
     [System.Obsolete("Use SideScrollingCamera (or another BaseCamera subclass) directly.")]
     public class Camera : SideScrollingCamera

@@ -27,7 +27,7 @@ namespace VoxelShooter
         /// 5Pi/4 (225°) = behind and offset into -Z (toward viewer), which
         /// places the eye over the right shoulder when the ship flies in +X.
         /// </summary>
-        public float Azimuth = MathHelper.Pi * 1.25f;  // 225° — right-shoulder Zaxxon
+        public float Azimuth = MathHelper.Pi * 1.25f;  // 225°, right-shoulder Zaxxon
 
         /// <summary>
         /// Vertical tilt above the horizontal plane (radians).

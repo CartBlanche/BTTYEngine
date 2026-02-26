@@ -12,7 +12,7 @@ namespace VoxelShooter
     {
         const int MAX_POWERUPS = 100;
 
-        // Cube geometry constants — 24 verts / 36 indices per cube (6 faces × 4 verts / 6 faces × 6 indices)
+        // Cube geometry constants, 24 verts / 36 indices per cube (6 faces × 4 verts / 6 faces × 6 indices)
         const int VERTS_PER_CUBE  = 24;
         const int INDICES_PER_CUBE = 36;
 
@@ -21,19 +21,19 @@ namespace VoxelShooter
         GraphicsDevice graphicsDevice;
 
         // Shared unit-cube centred at origin, built once; world matrix moves/rotates each pickup
-        VertexPositionNormalColor[] _unitCubeVerts   = new VertexPositionNormalColor[VERTS_PER_CUBE];
-        short[]                     _unitCubeIndices = new short[INDICES_PER_CUBE];
+        VertexPositionNormalColor[] unitCubeVerts   = new VertexPositionNormalColor[VERTS_PER_CUBE];
+        short[]                     unitCubeIndices = new short[INDICES_PER_CUBE];
 
         List<Powerup> Powerups;
 
         BasicEffect drawEffect;
 
         // Camera matrices cached from last Update so Draw can use them
-        Matrix _cameraView;
-        Matrix _cameraProjection;
+        Matrix cameraView;
+        Matrix cameraProjection;
 
         // Global time for the pulse glow animation
-        float _pulseTime = 0f;
+        float pulseTime = 0f;
 
         public PowerupController(GraphicsDevice gd)
         {
@@ -47,7 +47,7 @@ namespace VoxelShooter
         public void LoadContent(ContentManager content)
         {
             // Build the unit cube once; we colour it white so DiffuseColor drives the glow tint
-            ParticleCube.Create(ref _unitCubeVerts, ref _unitCubeIndices, Vector3.Zero, 0, 0.5f, Color.White);
+            ParticleCube.Create(ref unitCubeVerts, ref unitCubeIndices, Vector3.Zero, 0, 0.5f, Color.White);
 
             drawEffect = new BasicEffect(graphicsDevice)
             {
@@ -59,15 +59,15 @@ namespace VoxelShooter
         public void Update(GameTime gameTime, ICamera gameCamera, VoxelWorld gameWorld, Hero gameHero, float scrollPos)
         {
             float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
-            _pulseTime += dt;
+            pulseTime += dt;
 
             foreach (Powerup p in Powerups.Where(part => part.Active))
             {
                 p.Update(gameTime, gameWorld, gameHero, scrollPos);
             }
 
-            _cameraView       = gameCamera.ViewMatrix;
-            _cameraProjection = gameCamera.ProjectionMatrix;
+            cameraView       = gameCamera.ViewMatrix;
+            cameraProjection = gameCamera.ProjectionMatrix;
         }
 
         public void Draw()
@@ -76,16 +76,16 @@ namespace VoxelShooter
             if (activePowerups.Count == 0) return;
 
             // Pulse: Yellow (dim) → White (full brightness) for a real glow swing
-            float pulse     = 0.5f + 0.5f * (float)Math.Sin(_pulseTime * 4.0);
+            float pulse     = 0.5f + 0.5f * (float)Math.Sin(pulseTime * 4.0);
             Color glowColor = Color.Lerp(Color.Yellow, Color.White, pulse);
 
             // Rebuild the unit-cube verts with the current glow colour each frame
-            ParticleCube.Create(ref _unitCubeVerts, ref _unitCubeIndices, Vector3.Zero, 0, 0.5f, glowColor);
+            ParticleCube.Create(ref unitCubeVerts, ref unitCubeIndices, Vector3.Zero, 0, 0.5f, glowColor);
 
-            drawEffect.View       = _cameraView;
-            drawEffect.Projection = _cameraProjection;
+            drawEffect.View       = cameraView;
+            drawEffect.Projection = cameraProjection;
 
-            // Additive blending makes bright colours accumulate to white — the real glow trick
+            // Additive blending makes bright colours accumulate to white, the real glow trick
             var prevBlend        = graphicsDevice.BlendState;
             var prevDepthStencil = graphicsDevice.DepthStencilState;
             graphicsDevice.BlendState        = BlendState.Additive;
@@ -104,8 +104,8 @@ namespace VoxelShooter
                     pass.Apply();
                     graphicsDevice.DrawUserIndexedPrimitives<VertexPositionNormalColor>(
                         PrimitiveType.TriangleList,
-                        _unitCubeVerts,  0, VERTS_PER_CUBE,
-                        _unitCubeIndices, 0, INDICES_PER_CUBE / 3);
+                        unitCubeVerts,  0, VERTS_PER_CUBE,
+                        unitCubeIndices, 0, INDICES_PER_CUBE / 3);
                 }
             }
 
