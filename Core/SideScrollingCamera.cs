@@ -39,13 +39,13 @@ namespace VoxelShooter
         public SideScrollingCamera(GraphicsDevice graphicsDevice, Viewport viewport)
             : base(graphicsDevice, viewport)
         {
-            WorldMatrix = Matrix.CreateWorld(Vector3.Zero, Vector3.Forward, Vector3.Up);
+            // WorldMatrix = YFlipMatrix (Y-up convention) inherited from BaseCamera
 
-            // Initial view – matches the original Camera class defaults
+            // Initial rendering view — negated Y so world space is Y-up
             ViewMatrix = Matrix.CreateLookAt(
-                new Vector3(0f, 0f, -150f),
-                new Vector3(0f, 0f,  100f),
-                Vector3.Down);
+                new Vector3(0f, 150f, -150f),   // ToWorldSpace of (0, -150, -150)
+                new Vector3(0f, 0f,   100f),
+                Vector3.Up);
 
             ProjectionMatrix = Matrix.CreatePerspectiveFieldOfView(
                 MathHelper.PiOver4,
@@ -60,14 +60,20 @@ namespace VoxelShooter
 
         public override void Update(GameTime gameTime, VoxelWorld world)
         {
-            // Smooth-follow: lerp the eye position toward the scroll target
+            // Smooth-follow: lerp the eye position toward the scroll target (game space)
             Position = Vector3.Lerp(Position, Target, MoveSpeed);
 
-            // Rebuild view: eye is at Position+Offset, looking at Position, Y-down-is-up
-            // (the scene is oriented Z-forward, so Vector3.Down gives the correct screen-up)
-            ViewMatrix = Matrix.CreateLookAt(Position + Offset, Position, Vector3.Down);
+            // ── Rendering view (Y-up world space) ────────────────────────────────
+            // Convert game-space Position to Y-up world space, then place the eye
+            // at Offset from that point and look back at it with Vector3.Up.
+            Vector3 renderPos = ToWorldSpace(Position);
+            ViewMatrix = Matrix.CreateLookAt(renderPos + Offset, renderPos, Vector3.Up);
 
-            BoundingFrustum.Matrix = ViewMatrix * ProjectionMatrix;
+            // ── Culling frustum (game-space Y-down) ───────────────────────────────
+            // Legacy collision and chunk-visibility code uses game-space coordinates,
+            // so BoundingFrustum is rebuilt from the un-negated position + Vector3.Down.
+            Matrix cullingView = Matrix.CreateLookAt(Position + Offset, Position, Vector3.Down);
+            BoundingFrustum.Matrix = cullingView * ProjectionMatrix;
         }
     }
 }

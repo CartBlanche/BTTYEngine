@@ -34,6 +34,10 @@ namespace VoxelShooter
 
         int powerupLevel = 0;
 
+        // Cached camera WorldMatrix — applied in Draw so Hero geometry gets the
+        // same Y-flip as all other rendered voxel objects.
+        Matrix _cameraWorldMatrix = Matrix.Identity;
+
         bool orbActive;
         float orbAngle = -MathHelper.PiOver2;
         Vector3 orbPosition;
@@ -111,6 +115,8 @@ namespace VoxelShooter
 
             drawEffect.Projection = gameCamera.ProjectionMatrix;
             drawEffect.View = gameCamera.ViewMatrix;
+            _cameraWorldMatrix = gameCamera.WorldMatrix;
+            _cameraWorldMatrix = gameCamera.WorldMatrix;
         }
 
         public void DoHit(Vector3 pos, Projectile proj)
@@ -125,7 +131,7 @@ namespace VoxelShooter
 
         public void Draw(GraphicsDevice gd)
         {
-            drawEffect.World = Matrix.CreateTranslation(Position);
+            drawEffect.World = _cameraWorldMatrix * Matrix.CreateTranslation(Position);
 
             drawEffect.DiffuseColor = new Vector3(1f, 1f - hitAlpha, 1f - hitAlpha);
             foreach (EffectPass pass in drawEffect.CurrentTechnique.Passes)
@@ -142,7 +148,7 @@ namespace VoxelShooter
             }
 
             
-            drawEffect.World = Matrix.CreateScale(0.75f) * (Matrix.CreateRotationX(orbRotation.X) * Matrix.CreateRotationY(orbRotation.Y) * Matrix.CreateRotationZ(orbRotation.Z)) * Matrix.CreateTranslation(orbPosition);
+            drawEffect.World = _cameraWorldMatrix * Matrix.CreateScale(0.75f) * (Matrix.CreateRotationX(orbRotation.X) * Matrix.CreateRotationY(orbRotation.Y) * Matrix.CreateRotationZ(orbRotation.Z)) * Matrix.CreateTranslation(orbPosition);
 
             drawEffect.DiffuseColor = Color.White.ToVector3();
 

@@ -23,7 +23,11 @@ namespace VoxelShooter
         VoxelSprite tilesSprite;
         VoxelWorld gameWorld;
 
-        SideScrollingCamera gameCamera;
+        SideScrollingCamera sideCamera;
+        IsometricCamera      isoCamera;
+        CameraTransitionManager cameraManager;
+
+        KeyboardState _prevKeyboard;
 
         BasicEffect drawEffect;
 
@@ -98,9 +102,15 @@ namespace VoxelShooter
 
             scrollColumn = 12;
 
-            gameCamera = new SideScrollingCamera(GraphicsDevice, GraphicsDevice.Viewport);
-            gameCamera.Position = new Vector3(0f, gameWorld.Y_SIZE * Voxel.HALF_SIZE, 0f);
-            gameCamera.Target = gameCamera.Position;
+            sideCamera          = new SideScrollingCamera(GraphicsDevice, GraphicsDevice.Viewport);
+            sideCamera.Position = new Vector3(0f, gameWorld.Y_SIZE * Voxel.HALF_SIZE, 0f);
+            sideCamera.Target   = sideCamera.Position;
+
+            isoCamera          = new IsometricCamera(GraphicsDevice, GraphicsDevice.Viewport);
+            isoCamera.Position = sideCamera.Position;
+            isoCamera.Target   = sideCamera.Target;
+
+            cameraManager = new CameraTransitionManager(sideCamera);
 
             gameHero = new Hero();
             gameHero.LoadContent(Content, GraphicsDevice);
@@ -116,9 +126,9 @@ namespace VoxelShooter
 
             drawEffect = new BasicEffect(GraphicsDevice)
             {
-                World = gameCamera.WorldMatrix,
-                View = gameCamera.ViewMatrix,
-                Projection = gameCamera.ProjectionMatrix,
+                World = cameraManager.WorldMatrix,
+                View = cameraManager.ViewMatrix,
+                Projection = cameraManager.ProjectionMatrix,
                 VertexColorEnabled = true,
             };
         }
@@ -146,6 +156,18 @@ namespace VoxelShooter
 
             if (!IsActive) return;
 
+            // ── Camera transition trigger (Tab = toggle, for testing) ──────────────
+            KeyboardState kb = Keyboard.GetState();
+            if (kb.IsKeyDown(Keys.Tab) && _prevKeyboard.IsKeyUp(Keys.Tab))
+            {
+                if (cameraManager.ActiveCamera is SideScrollingCamera)
+                    cameraManager.TransitionTo(isoCamera, 1.5f);
+                else
+                    cameraManager.TransitionTo(sideCamera, 1.5f);
+            }
+            _prevKeyboard = kb;
+            // ─────────────────────────────────────────────────────────────────────
+
             if (Helper.Random.Next(10) == 1)
             {
                 Vector3 pos = new Vector3(100f, -50f+((float)Helper.Random.NextDouble()*100f), 5f + ((float)Helper.Random.NextDouble()*10f));
@@ -157,7 +179,7 @@ namespace VoxelShooter
             {
                 scrollDist += (scrollSpeed*1.5f);
                 scrollPos += scrollSpeed;
-                gameCamera.Target = new Vector3(scrollPos, gameCamera.Target.Y, gameCamera.Target.Z);
+                cameraManager.Target = new Vector3(scrollPos, cameraManager.Target.Y, cameraManager.Target.Z);
 
                 if (scrollDist >= Chunk.X_SIZE * Voxel.SIZE && scrollColumn<gameWorld.X_CHUNKS-1)
                 {
@@ -175,19 +197,19 @@ namespace VoxelShooter
 
             inputManager.EndInputProcessing();
 
-            gameCamera.Update(gameTime, gameWorld);
-            gameWorld.Update(gameTime, gameCamera);
+            cameraManager.Update(gameTime, gameWorld);
+            gameWorld.Update(gameTime, cameraManager);
 
-            gameHero.Update(gameTime, gameCamera, gameWorld, scrollSpeed);
+            gameHero.Update(gameTime, cameraManager, gameWorld, scrollSpeed);
 
-            enemyController.Update(gameTime, gameCamera, gameHero, gameWorld, scrollPos, scrollSpeed);
-            projectileController.Update(gameTime, gameCamera, gameHero, gameWorld, scrollPos);
-            particleController.Update(gameTime, gameCamera, gameWorld);
-            powerupController.Update(gameTime, gameCamera, gameWorld, gameHero, scrollPos);
-            gameStarfield.Update(gameTime, gameCamera, gameWorld, scrollSpeed);
+            enemyController.Update(gameTime, cameraManager, gameHero, gameWorld, scrollPos, scrollSpeed);
+            projectileController.Update(gameTime, cameraManager, gameHero, gameWorld, scrollPos);
+            particleController.Update(gameTime, cameraManager, gameWorld);
+            powerupController.Update(gameTime, cameraManager, gameWorld, gameHero, scrollPos);
+            gameStarfield.Update(gameTime, cameraManager, gameWorld, scrollSpeed);
 
-            drawEffect.View = gameCamera.ViewMatrix;
-            drawEffect.World = gameCamera.WorldMatrix;
+            drawEffect.View = cameraManager.ViewMatrix;
+            drawEffect.World = cameraManager.WorldMatrix;
 
             base.Update(gameTime);
         }
@@ -218,7 +240,7 @@ namespace VoxelShooter
                         if (!c.Visible) continue;
 
                         if (c == null || c.VertexArray==null || c.VertexArray.Length == 0) continue;
-                        if (!gameCamera.BoundingFrustum.Intersects(c.boundingSphere)) continue;
+                        if (!cameraManager.BoundingFrustum.Intersects(c.boundingSphere)) continue;
                         GraphicsDevice.DrawUserIndexedPrimitives<VertexPositionNormalColor>(PrimitiveType.TriangleList, c.VertexArray, 0, c.VertexArray.Length, c.IndexArray, 0, c.VertexArray.Length / 2);
                     }
                 }
@@ -226,8 +248,8 @@ namespace VoxelShooter
 
             gameHero.Draw(GraphicsDevice);
 
-            enemyController.Draw(gameCamera);
-            projectileController.Draw(gameCamera);
+            enemyController.Draw(cameraManager);
+            projectileController.Draw(cameraManager);
             particleController.Draw();
             powerupController.Draw();
 
