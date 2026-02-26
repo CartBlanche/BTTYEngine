@@ -26,6 +26,11 @@ namespace VoxelShooter
         public bool Updated = false;
 
         VertexBuffer vb;
+
+        // Per-chunk scratch lists for mesh building — avoids the shared-state bug
+        // that arose from using parentWorld.Vertices / parentWorld.Indexes.
+        readonly List<VertexPositionNormalColor> _vertices = new List<VertexPositionNormalColor>();
+        readonly List<short> _indexes = new List<short>();
         
         public Chunk(VoxelWorld world, int wx, int wy, int wz, bool createGround)
         {
@@ -72,8 +77,8 @@ namespace VoxelShooter
         public void UpdateMesh()
         {
             Vector3 meshCenter = (new Vector3(X_SIZE, Y_SIZE, Z_SIZE) * Voxel.SIZE) / 2f;
-            parentWorld.Vertices.Clear();
-            parentWorld.Indexes.Clear();
+            _vertices.Clear();
+            _indexes.Clear();
 
             for (int z = Z_SIZE - 1; z >= 0; z--)
                 for (int y = 0; y < Y_SIZE; y++)
@@ -91,19 +96,19 @@ namespace VoxelShooter
                         if (!IsVoxelAt(x, y - 1, z)) MakeQuad(worldOffset, new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(0f, 0f, -1f), CalcLighting(x, y - 1, z, new Color(Voxels[x, y, z].SR, Voxels[x, y, z].SG, Voxels[x, y, z].SB))); 
                     }
 
-            VertexArray = parentWorld.Vertices.ToArray();
-            IndexArray = new short[parentWorld.Indexes.Count];
+            VertexArray = _vertices.ToArray();
+            IndexArray = new short[_indexes.Count];
 
-            for (int ind = 0; ind < parentWorld.Indexes.Count / 6; ind++)
+            for (int ind = 0; ind < _indexes.Count / 6; ind++)
             {
                 for (int i = 0; i < 6; i++)
                 {
-                    IndexArray[(ind * 6) + i] = (short)(parentWorld.Indexes[(ind * 6) + i] + (ind * 4));
+                    IndexArray[(ind * 6) + i] = (short)(_indexes[(ind * 6) + i] + (ind * 4));
                 }
             }
 
-            parentWorld.Vertices.Clear();
-            parentWorld.Indexes.Clear();
+            _vertices.Clear();
+            _indexes.Clear();
 
             Updated = false;
         }
@@ -161,16 +166,16 @@ namespace VoxelShooter
 
         void MakeQuad(Vector3 offset, Vector3 tl, Vector3 tr, Vector3 br, Vector3 bl, Vector3 norm, Color col)
         {
-            parentWorld.Vertices.Add(new VertexPositionNormalColor(offset + tl, norm, col));
-            parentWorld.Vertices.Add(new VertexPositionNormalColor(offset + tr, norm, col));
-            parentWorld.Vertices.Add(new VertexPositionNormalColor(offset + br, norm, col));
-            parentWorld.Vertices.Add(new VertexPositionNormalColor(offset + bl, norm, col));
-            parentWorld.Indexes.Add(0);
-            parentWorld.Indexes.Add(1);
-            parentWorld.Indexes.Add(2);
-            parentWorld.Indexes.Add(2);
-            parentWorld.Indexes.Add(3);
-            parentWorld.Indexes.Add(0);
+            _vertices.Add(new VertexPositionNormalColor(offset + tl, norm, col));
+            _vertices.Add(new VertexPositionNormalColor(offset + tr, norm, col));
+            _vertices.Add(new VertexPositionNormalColor(offset + br, norm, col));
+            _vertices.Add(new VertexPositionNormalColor(offset + bl, norm, col));
+            _indexes.Add(0);
+            _indexes.Add(1);
+            _indexes.Add(2);
+            _indexes.Add(2);
+            _indexes.Add(3);
+            _indexes.Add(0);
         }
 
         public bool IsVoxelAt(int x, int y, int z)

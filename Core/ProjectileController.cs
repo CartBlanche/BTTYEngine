@@ -39,7 +39,7 @@ namespace VoxelShooter
             LoadVoxels.LoadSprite(Path.Combine(content.RootDirectory, "projectiles.vxs"), ref projectileStrip);
         }
 
-        public void Update(GameTime gameTime, Camera gameCamera, Hero gameHero, VoxelWorld gameWorld, float scrollPos)
+        public void Update(GameTime gameTime, ICamera gameCamera, Hero gameHero, VoxelWorld gameWorld, float scrollPos)
         {
             foreach (Projectile p in Projectiles.Where(proj => proj.Active))
             {
@@ -48,17 +48,17 @@ namespace VoxelShooter
 
             Projectiles.RemoveAll(proj => !proj.Active);
 
-            drawEffect.World = gameCamera.worldMatrix;
-            drawEffect.View = gameCamera.viewMatrix;
-            drawEffect.Projection = gameCamera.projectionMatrix;
+            drawEffect.World = gameCamera.WorldMatrix;
+            drawEffect.View = gameCamera.ViewMatrix;
+            drawEffect.Projection = gameCamera.ProjectionMatrix;
         }
 
-        public void Draw(Camera gameCamera)
+        public void Draw(ICamera gameCamera)
         {
             foreach (Projectile p in Projectiles.Where(proj => proj.Type == ProjectileType.Laser1 || proj.Type == ProjectileType.Laser2 || proj.Type == ProjectileType.Laser3 || proj.Type == ProjectileType.Laser4))
             {
                 //drawEffect.Alpha = 0.5f;
-                drawEffect.World = gameCamera.worldMatrix *
+                drawEffect.World = gameCamera.WorldMatrix *
                                    Matrix.CreateRotationX(MathHelper.PiOver2) *
                                    //Matrix.CreateRotationZ(-MathHelper.PiOver2) *
                                    p.Rotation *
@@ -76,7 +76,7 @@ namespace VoxelShooter
 
             foreach (Projectile p in Projectiles.Where(proj => proj.Type == ProjectileType.Rocket))
             {
-                drawEffect.World = gameCamera.worldMatrix *
+                drawEffect.World = gameCamera.WorldMatrix *
                                    Matrix.CreateRotationX(MathHelper.PiOver2) *
                                    p.Rotation *
                                    Matrix.CreateScale(0.5f) * 

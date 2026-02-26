@@ -62,7 +62,7 @@ namespace VoxelShooter
 
         }
 
-        public void Update(GameTime gameTime, Camera gameCamera, VoxelWorld gameWorld, float scrollSpeed)
+        public void Update(GameTime gameTime, ICamera gameCamera, VoxelWorld gameWorld, float scrollSpeed)
         {
             Vector2 v2Pos= new Vector2(Position.X,Position.Y);
 
@@ -109,8 +109,8 @@ namespace VoxelShooter
 
             CheckLevelUp();
 
-            drawEffect.Projection = gameCamera.projectionMatrix;
-            drawEffect.View = gameCamera.viewMatrix;
+            drawEffect.Projection = gameCamera.ProjectionMatrix;
+            drawEffect.View = gameCamera.ViewMatrix;
         }
 
         public void DoHit(Vector3 pos, Projectile proj)
@@ -251,7 +251,7 @@ namespace VoxelShooter
             if (powerupLevel >= 2) orbActive = true;
         }
 
-        void CheckCollisions(VoxelWorld world, Camera gameCamera)
+        void CheckCollisions(VoxelWorld world, ICamera gameCamera)
         {
             float checkRadius = 3.5f;
             float radiusSweep = 0.1f;
@@ -270,7 +270,7 @@ namespace VoxelShooter
                     {
                         tempSpeed.Y = 0f;
                     }
-                    if (gameCamera.boundingFrustum.Contains(checkPos) == ContainmentType.Disjoint) tempSpeed.Y = 0;
+                    if (gameCamera.BoundingFrustum.Contains(checkPos) == ContainmentType.Disjoint) tempSpeed.Y = 0;
                 }
             }
             if (tempSpeed.Y > 0f)
@@ -283,7 +283,7 @@ namespace VoxelShooter
                     {
                         tempSpeed.Y = 0f;
                     }
-                    if (gameCamera.boundingFrustum.Contains(checkPos) == ContainmentType.Disjoint) tempSpeed.Y = 0;                    
+                    if (gameCamera.BoundingFrustum.Contains(checkPos) == ContainmentType.Disjoint) tempSpeed.Y = 0;                    
                 }
             }
             if (tempSpeed.X < 0f)
@@ -296,7 +296,7 @@ namespace VoxelShooter
                     {
                         tempSpeed.X = 0f;
                     }
-                    if (gameCamera.boundingFrustum.Contains(checkPos) == ContainmentType.Disjoint) { tempSpeed.X -= Speed.X; break; }
+                    if (gameCamera.BoundingFrustum.Contains(checkPos) == ContainmentType.Disjoint) { tempSpeed.X -= Speed.X; break; }
                     
                 }
             }
@@ -310,7 +310,7 @@ namespace VoxelShooter
                     {
                         tempSpeed.X = 0f;
                     }
-                    if (gameCamera.boundingFrustum.Contains(checkPos) == ContainmentType.Disjoint) { tempSpeed.X -= Speed.X; break; }
+                    if (gameCamera.BoundingFrustum.Contains(checkPos) == ContainmentType.Disjoint) { tempSpeed.X -= Speed.X; break; }
                     
                 }
             }

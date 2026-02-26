@@ -50,7 +50,7 @@ namespace VoxelShooter
 
         }
 
-        public void Update(GameTime gameTime, Camera gameCamera, VoxelWorld gameWorld, float scrollSpeed)
+        public void Update(GameTime gameTime, ICamera gameCamera, VoxelWorld gameWorld, float scrollSpeed)
         {
             
             foreach (Particle p in Particles.Where(part => part.Active))

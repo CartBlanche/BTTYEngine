@@ -45,7 +45,7 @@ namespace VoxelShooter
 
         }
 
-        public void Update(GameTime gameTime, Camera gameCamera, VoxelWorld gameWorld)
+        public void Update(GameTime gameTime, ICamera gameCamera, VoxelWorld gameWorld)
         {
             
             foreach (Particle p in Particles.Where(part => part.Active))
@@ -68,9 +68,9 @@ namespace VoxelShooter
 
             currentParticleCount = Particles.Count(part => part.Active);
 
-            drawEffect.World = gameCamera.worldMatrix;
-            drawEffect.View = gameCamera.viewMatrix;
-            drawEffect.Projection = gameCamera.projectionMatrix;
+            drawEffect.World = gameCamera.WorldMatrix;
+            drawEffect.View = gameCamera.ViewMatrix;
+            drawEffect.Projection = gameCamera.ProjectionMatrix;
         }
 
         public void Draw()

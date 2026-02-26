@@ -19,9 +19,6 @@ namespace VoxelShooter
 
         double redrawTime = 0;
 
-        public List<VertexPositionNormalColor> Vertices = new List<VertexPositionNormalColor>();
-        public List<short> Indexes = new List<short>();
-
         Queue<Chunk> updateQueue = new Queue<Chunk>();
 
         public VoxelWorld()
@@ -47,7 +44,7 @@ namespace VoxelShooter
             Z_SIZE = Z_CHUNKS * Chunk.Z_SIZE;
         }
 
-        public void Update(GameTime gameTime, Camera gameCamera)
+        public void Update(GameTime gameTime, ICamera gameCamera)
         {
             X_SIZE = X_CHUNKS * Chunk.X_SIZE;
             Y_SIZE = Y_CHUNKS * Chunk.Y_SIZE;
@@ -73,7 +70,7 @@ namespace VoxelShooter
                 {
                     Chunk c = Chunks[x, y, 0];
                     if (c == null) continue;
-                    if (!gameCamera.boundingFrustum.Intersects(c.boundingSphere))//.Transform(Matrix.CreateTranslation(-gameCamera.Position))))
+                    if (!gameCamera.BoundingFrustum.Intersects(c.boundingSphere))
                     {
                         if (c.Visible)
                         {

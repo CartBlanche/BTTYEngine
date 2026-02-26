@@ -23,7 +23,7 @@ namespace VoxelShooter
         VoxelSprite tilesSprite;
         VoxelWorld gameWorld;
 
-        Camera gameCamera;
+        SideScrollingCamera gameCamera;
 
         BasicEffect drawEffect;
 
@@ -98,7 +98,7 @@ namespace VoxelShooter
 
             scrollColumn = 12;
 
-            gameCamera = new Camera(GraphicsDevice, GraphicsDevice.Viewport);
+            gameCamera = new SideScrollingCamera(GraphicsDevice, GraphicsDevice.Viewport);
             gameCamera.Position = new Vector3(0f, gameWorld.Y_SIZE * Voxel.HALF_SIZE, 0f);
             gameCamera.Target = gameCamera.Position;
 
@@ -116,9 +116,9 @@ namespace VoxelShooter
 
             drawEffect = new BasicEffect(GraphicsDevice)
             {
-                World = gameCamera.worldMatrix,
-                View = gameCamera.viewMatrix,
-                Projection = gameCamera.projectionMatrix,
+                World = gameCamera.WorldMatrix,
+                View = gameCamera.ViewMatrix,
+                Projection = gameCamera.ProjectionMatrix,
                 VertexColorEnabled = true,
             };
         }
@@ -157,7 +157,7 @@ namespace VoxelShooter
             {
                 scrollDist += (scrollSpeed*1.5f);
                 scrollPos += scrollSpeed;
-                gameCamera.Target.X = scrollPos;
+                gameCamera.Target = new Vector3(scrollPos, gameCamera.Target.Y, gameCamera.Target.Z);
 
                 if (scrollDist >= Chunk.X_SIZE * Voxel.SIZE && scrollColumn<gameWorld.X_CHUNKS-1)
                 {
@@ -186,8 +186,8 @@ namespace VoxelShooter
             powerupController.Update(gameTime, gameCamera, gameWorld, gameHero, scrollPos);
             gameStarfield.Update(gameTime, gameCamera, gameWorld, scrollSpeed);
 
-            drawEffect.View = gameCamera.viewMatrix;
-            drawEffect.World = gameCamera.worldMatrix;
+            drawEffect.View = gameCamera.ViewMatrix;
+            drawEffect.World = gameCamera.WorldMatrix;
 
             base.Update(gameTime);
         }
@@ -218,7 +218,7 @@ namespace VoxelShooter
                         if (!c.Visible) continue;
 
                         if (c == null || c.VertexArray==null || c.VertexArray.Length == 0) continue;
-                        if (!gameCamera.boundingFrustum.Intersects(c.boundingSphere)) continue;
+                        if (!gameCamera.BoundingFrustum.Intersects(c.boundingSphere)) continue;
                         GraphicsDevice.DrawUserIndexedPrimitives<VertexPositionNormalColor>(PrimitiveType.TriangleList, c.VertexArray, 0, c.VertexArray.Length, c.IndexArray, 0, c.VertexArray.Length / 2);
                     }
                 }

@@ -60,7 +60,7 @@ namespace VoxelShooter
            
         }
 
-        public void Update(GameTime gameTime, Camera gameCamera, VoxelWorld gameWorld, Hero gameHero, float scrollPos)
+        public void Update(GameTime gameTime, ICamera gameCamera, VoxelWorld gameWorld, Hero gameHero, float scrollPos)
         {
             
             foreach (Powerup p in Powerups.Where(part => part.Active))
@@ -93,9 +93,9 @@ namespace VoxelShooter
 
             currentPowerupCount = Powerups.Count(part => part.Active);
 
-            drawEffect.World = gameCamera.worldMatrix;
-            drawEffect.View = gameCamera.viewMatrix;
-            drawEffect.Projection = gameCamera.projectionMatrix;
+            drawEffect.World = gameCamera.WorldMatrix;
+            drawEffect.View = gameCamera.ViewMatrix;
+            drawEffect.Projection = gameCamera.ProjectionMatrix;
         }
 
         public void Draw()
