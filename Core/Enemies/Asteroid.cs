@@ -35,6 +35,7 @@ namespace VoxelShooter
         {
             gameWorld.Explode(checkPosition, 5f);
 
+            Health = 0f;
             Die();
 
             base.DoCollide(x, y, z, checkPosition, gameHero, gameWorld, withPlayer);
