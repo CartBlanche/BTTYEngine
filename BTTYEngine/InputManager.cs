@@ -124,5 +124,13 @@ namespace VoxelShooter
         public bool IsExiting() =>
             current.KeyState.IsKeyDown(Keys.Escape) ||
             current.PadState.Buttons.Back == ButtonState.Pressed;
+
+        /// <summary>
+        /// True on the frame the player toggles the camera view,
+        /// keyboard Tab, or gamepad right-stick click (RS / R3).
+        /// </summary>
+        public bool IsCameraTogglePressed() =>
+            IsKeyPressed(Keys.Tab) ||
+            IsButtonPressed(Buttons.RightStick);
     }
 }

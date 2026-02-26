@@ -27,8 +27,6 @@ namespace VoxelShooter
         IsometricCamera      isoCamera;
         CameraTransitionManager cameraManager;
 
-        KeyboardState prevKeyboard;
-
         BasicEffect drawEffect;
 
         EnemyController enemyController;
@@ -156,16 +154,14 @@ namespace VoxelShooter
 
             if (!IsActive) return;
 
-            // ── Camera transition trigger (Tab = toggle, for testing) ─────────────
-            KeyboardState kb = Keyboard.GetState();
-            if (kb.IsKeyDown(Keys.Tab) && prevKeyboard.IsKeyUp(Keys.Tab))
+            // ── Camera transition trigger (Tab / RS = toggle) ──────────────────
+            if (inputManager.IsCameraTogglePressed())
             {
                 if (cameraManager.ActiveCamera is SideScrollingCamera)
                     cameraManager.TransitionTo(isoCamera, 1.5f);
                 else
                     cameraManager.TransitionTo(sideCamera, 1.5f);
             }
-            prevKeyboard = kb;
             // ─────────────────────────────────────────────────────────────────────
 
             if (Helper.Random.Next(10) == 1)
