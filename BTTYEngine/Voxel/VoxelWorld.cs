@@ -257,7 +257,7 @@ namespace VoxelShooter
 
 
 
-        internal bool CanCollideWith(VoxelType voxelType)
+        public bool CanCollideWith(VoxelType voxelType)
         {
             switch (voxelType)
             {
