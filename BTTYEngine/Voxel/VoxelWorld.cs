@@ -127,14 +127,14 @@ namespace VoxelShooter
 
         public Vector3 FromScreenSpace(Vector3 screen)
         {
-            Vector3 vox = new Vector3(screen.X / Voxel.SIZE, screen.Y / Voxel.SIZE, screen.Z / Voxel.SIZE);
+            Vector3 vox = new Vector3(screen.X / Voxel.SIZE, -(screen.Y / Voxel.SIZE), screen.Z / Voxel.SIZE);
 
             return vox;
         }
 
         public Vector3 ToScreenSpace(int x, int y, int z)
         {
-            Vector3 screen = new Vector3(x * Voxel.SIZE, y * Voxel.SIZE, z * Voxel.SIZE);
+            Vector3 screen = new Vector3(x * Voxel.SIZE, -(y * Voxel.SIZE), z * Voxel.SIZE);
 
             return screen;
         }
@@ -162,11 +162,12 @@ namespace VoxelShooter
 
         public void UpdateWorldMeshes()
         {
-            //if(!waitingForUpdate)
-            //  ThreadPool.QueueUserWorkItem(delegate { DoAsyncUpdate(); });
-            foreach (Chunk c in Chunks) c.UpdateMesh();
-
-
+            foreach (Chunk c in Chunks)
+            {
+                if (c == null) continue;
+                c.Visible = true;
+                c.UpdateMesh();
+            }
         }
 
         public void DoAsyncUpdate()

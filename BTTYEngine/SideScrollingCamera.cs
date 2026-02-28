@@ -25,7 +25,7 @@ namespace VoxelShooter
         /// Eye offset from the tracked position.
         /// Negative Z pushes the eye back (away from the scene in screen-space).
         /// </summary>
-        public Vector3 Offset = new Vector3(0f, 0f, -95f);
+        public Vector3 Offset = new Vector3(0f, 0f, 95f);
 
         // ── Tuning constants ──────────────────────────────────────────────────────
 
@@ -41,11 +41,11 @@ namespace VoxelShooter
         {
             WorldMatrix = Matrix.CreateWorld(Vector3.Zero, Vector3.Forward, Vector3.Up);
 
-            // Initial view – matches the original Camera class defaults
+            // Initial view – camera sits at +Z, looking toward origin, Y-up convention
             ViewMatrix = Matrix.CreateLookAt(
-                new Vector3(0f, 0f, -150f),
-                new Vector3(0f, 0f,  100f),
-                Vector3.Down);
+                new Vector3(0f, 0f,  150f),
+                new Vector3(0f, 0f,    0f),
+                Vector3.Up);
 
             ProjectionMatrix = Matrix.CreatePerspectiveFieldOfView(
                 MathHelper.PiOver4,
@@ -63,9 +63,8 @@ namespace VoxelShooter
             // Smooth-follow: lerp the eye position toward the scroll target
             Position = Vector3.Lerp(Position, Target, MoveSpeed);
 
-            // Rebuild view: eye is at Position+Offset, looking at Position, Y-down-is-up
-            // (the scene is oriented Z-forward, so Vector3.Down gives the correct screen-up)
-            ViewMatrix = Matrix.CreateLookAt(Position + Offset, Position, Vector3.Down);
+            // Rebuild view: eye is at Position+Offset, looking at Position, Y-up convention
+            ViewMatrix = Matrix.CreateLookAt(Position + Offset, Position, Vector3.Up);
 
             BoundingFrustum.Matrix = ViewMatrix * ProjectionMatrix;
         }

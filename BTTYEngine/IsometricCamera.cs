@@ -27,7 +27,7 @@ namespace VoxelShooter
         /// 5Pi/4 (225°) = behind and offset into -Z (toward viewer), which
         /// places the eye over the right shoulder when the ship flies in +X.
         /// </summary>
-        public float Azimuth = MathHelper.Pi * 1.25f;  // 225°, right-shoulder Zaxxon
+        public float Azimuth = MathHelper.Pi * 0.75f;  // 135°, right-shoulder Zaxxon (Y-up)
 
         /// <summary>
         /// Vertical tilt above the horizontal plane (radians).
@@ -80,19 +80,19 @@ namespace VoxelShooter
             float cosAz = (float)System.Math.Cos(Azimuth);
             float sinAz = (float)System.Math.Sin(Azimuth);
 
-            // In Y-down game space, "visually above" = negative Y.
+            // In Y-up game space, "visually above" = positive Y.
             // The eye sits on a sphere at the given azimuth/elevation around Position.
             Vector3 eyeOffset = new Vector3(
                 cosEl * cosAz,
-                -sinEl,         // negative Y = above the scene in Y-down space
+                +sinEl,         // positive Y = above the scene in Y-up space
                 cosEl * sinAz
             ) * Distance;
 
-            // Vector3.Down as up-hint matches the side-scroller convention.
+            // Vector3.Up as up-hint matches Y-up convention.
             ViewMatrix = Matrix.CreateLookAt(
                 Position + eyeOffset,
                 Position,
-                Vector3.Down);
+                Vector3.Up);
 
             BoundingFrustum.Matrix = ViewMatrix * ProjectionMatrix;
         }

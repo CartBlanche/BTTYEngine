@@ -98,10 +98,12 @@ namespace VoxelShooter
                 for(int xx=0;xx<12;xx++)
                     if(tileLayer.Tiles[xx,yy]!=null) gameWorld.CopySprite(xx*Chunk.X_SIZE, yy*Chunk.Y_SIZE, 0, tilesSprite.AnimChunks[tileLayer.Tiles[xx,yy].Index-1]);
 
+            gameWorld.UpdateWorldMeshes();
+
             scrollColumn = 12;
 
             sideCamera          = new SideScrollingCamera(GraphicsDevice, GraphicsDevice.Viewport);
-            sideCamera.Position = new Vector3(0f, gameWorld.Y_SIZE * Voxel.HALF_SIZE, 0f);
+            sideCamera.Position = new Vector3(0f, -(gameWorld.Y_SIZE * Voxel.HALF_SIZE), 0f);
             sideCamera.Target   = sideCamera.Position;
 
             isoCamera           = new IsometricCamera(GraphicsDevice, GraphicsDevice.Viewport);
@@ -166,7 +168,7 @@ namespace VoxelShooter
 
             if (Helper.Random.Next(10) == 1)
             {
-                Vector3 pos = new Vector3(100f, -50f+((float)Helper.Random.NextDouble()*100f), 5f + ((float)Helper.Random.NextDouble()*10f));
+                Vector3 pos = new Vector3(100f, -(gameWorld.Y_SIZE * Voxel.HALF_SIZE) + (-50f+((float)Helper.Random.NextDouble()*100f)), 5f + ((float)Helper.Random.NextDouble()*10f));
                 Vector3 col = (Vector3.One * 0.5f) + (Vector3.One*((float)Helper.Random.NextDouble()*0.5f));
                 if(scrollSpeed>0f) gameStarfield.Spawn(pos, new Vector3((-0.1f-((float)Helper.Random.NextDouble()*1f)) * 5f, 0f, 0f), 0.5f, new Color(col), 20000, false);
             }

@@ -73,7 +73,7 @@ namespace VoxelShooter
                         int vz = buffer[pos + 2];
                         Color top = new Color(buffer[pos + 3], buffer[pos + 4], buffer[pos + 5]);
 
-                        c.SetVoxel(vx, vy, vz, true, top);
+                        c.SetVoxel(vx, ys - 1 - vy, vz, true, top);
                         pos += 6;
 
                     }

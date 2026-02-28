@@ -47,7 +47,7 @@ namespace VoxelShooter
 
         public Hero()
         {
-            Position = new Vector3(-150f, 45f, 5f);
+            Position = new Vector3(-150f, -45f, 5f);
         }
 
         public void LoadContent(ContentManager content, GraphicsDevice gd)

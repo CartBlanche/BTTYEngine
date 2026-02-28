@@ -82,15 +82,15 @@ namespace VoxelShooter
         /// <summary>
         /// Movement direction combining keyboard (WASD / arrow keys) and gamepad
         /// left stick. Keyboard takes priority if both are active.
-        /// The Y axis is flipped on the stick to match screen space (up = negative Y).
+        /// Y-up convention: W/up = positive Y, S/down = negative Y.
         /// </summary>
         public Vector2 MoveDirection()
         {
             var dir = Vector2.Zero;
 
             // Keyboard
-            if (current.KeyState.IsKeyDown(Keys.W) || current.KeyState.IsKeyDown(Keys.Up))    dir.Y = -1;
-            if (current.KeyState.IsKeyDown(Keys.S) || current.KeyState.IsKeyDown(Keys.Down))  dir.Y =  1;
+            if (current.KeyState.IsKeyDown(Keys.W) || current.KeyState.IsKeyDown(Keys.Up))    dir.Y =  1;
+            if (current.KeyState.IsKeyDown(Keys.S) || current.KeyState.IsKeyDown(Keys.Down))  dir.Y = -1;
             if (current.KeyState.IsKeyDown(Keys.A) || current.KeyState.IsKeyDown(Keys.Left))  dir.X = -1;
             if (current.KeyState.IsKeyDown(Keys.D) || current.KeyState.IsKeyDown(Keys.Right)) dir.X =  1;
 
@@ -100,8 +100,8 @@ namespace VoxelShooter
                 var stick = current.PadState.ThumbSticks.Left;
                 if (stick.LengthSquared() > 0.01f)
                 {
-                    dir.X =  stick.X;
-                    dir.Y = -stick.Y; // stick Y is inverted relative to screen space
+                    dir.X = stick.X;
+                    dir.Y = stick.Y; // ThumbSticks.Left.Y is already +1 when pushed up
                 }
             }
 

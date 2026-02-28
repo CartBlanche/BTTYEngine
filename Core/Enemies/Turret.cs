@@ -59,7 +59,7 @@ namespace VoxelShooter
         {
             barrelRot = Helper.TurnToFace(new Vector2(Position.X, Position.Y), new Vector2(gameHero.Position.X, gameHero.Position.Y), barrelRot, 1f, 0.1f);
 
-            barrelRot = Inverted ? MathHelper.Clamp(barrelRot, 0.5f, MathHelper.Pi-0.5f) : MathHelper.Clamp(barrelRot, -MathHelper.Pi + 0.5f, -0.5f);
+            barrelRot = Inverted ? MathHelper.Clamp(barrelRot, -MathHelper.Pi + 0.5f, -0.5f) : MathHelper.Clamp(barrelRot, 0.5f, MathHelper.Pi-0.5f);
             //f(Helper.Random.Next(10)==1) ParticleController.Instance.Spawn(new Vector3(Helper.RandomPointInCircle(new Vector2(Position.X, Position.Y), 0f, 4f), Position.Z), Vector3.Zero, 0.3f, new Color(Color.Gray.ToVector3() * Helper.RandomFloat(0.4f, 0.8f)), 1000, false);
 
             base.Update(gameTime, gameWorld, gameHero);
