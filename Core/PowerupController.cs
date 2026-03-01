@@ -120,6 +120,13 @@ namespace VoxelShooter
             p.Spawn(pos, new Vector3(Helper.RandomFloat(-0.01f, 0.01f), Helper.RandomFloat(-0.01f, 0.01f), 0f));
         }
 
+        public void Spawn(Vector3 pos, Vector3 initialSpeed)
+        {
+            Powerup p = Powerups.FirstOrDefault(part => !part.Active);
+            if (p == null) return;
+            p.Spawn(pos, initialSpeed);
+        }
+
         internal void Reset()
         {
             foreach (Powerup p in Powerups) p.Active = false;

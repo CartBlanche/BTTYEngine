@@ -46,6 +46,8 @@ namespace VoxelShooter
 
         int scrollColumn;
 
+        PhysicsManager physicsManager;
+
         InputManager inputManager = new InputManager();
 
         SpriteFont font;
@@ -112,8 +114,12 @@ namespace VoxelShooter
 
             cameraManager = new CameraTransitionManager(sideCamera);
 
+            physicsManager = new PhysicsManager();
+            physicsManager.Initialize();
+
             gameHero = new Hero();
             gameHero.LoadContent(Content, GraphicsDevice);
+            gameHero.InitPhysics(physicsManager);
 
             enemyController = new EnemyController(GraphicsDevice);
             enemyController.LoadContent(Content, spawnLayer);
@@ -139,7 +145,7 @@ namespace VoxelShooter
         /// </summary>
         protected override void UnloadContent()
         {
-            // TODO: Unload any non ContentManager content here
+            physicsManager?.Dispose();
         }
 
         /// <summary>
@@ -194,6 +200,17 @@ namespace VoxelShooter
             if (inputManager.IsFiring()) gameHero.Fire();
 
             inputManager.EndInputProcessing();
+
+            physicsManager.Step((float)gameTime.ElapsedGameTime.TotalSeconds);
+
+            // Dispatch entity-entity collision events (queued by NarrowPhaseCallbacks on Bepu threads).
+            CollisionEventHandler.Instance.ProcessPending(evt =>
+            {
+                var a = EntityRegistry.Instance.FindByHandle(evt.A);
+                var b = EntityRegistry.Instance.FindByHandle(evt.B);
+                a?.OnCollision(b);
+                b?.OnCollision(a);
+            });
 
             cameraManager.Update(gameTime, gameWorld);
             gameWorld.Update(gameTime, cameraManager);

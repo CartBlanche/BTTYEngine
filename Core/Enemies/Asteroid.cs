@@ -20,13 +20,36 @@ namespace VoxelShooter
             Health = 3f;
         }
 
+        public override void OnCollision(IEntity other)
+        {
+            if (other is Hero hero)
+            {
+                // Damage scales with asteroid speed; fast rocks hurt more than slow ones.
+                float damage = Speed.Length() * 20f;
+                hero.DoHit(Position, damage);
+                // Push the ship in the asteroid's direction of travel, proportional to speed.
+                hero.ApplyKnockback(Speed * 0.5f);
+                // Destroy the asteroid immediately so the collision fires exactly once.
+                Health = 0f;
+            }
+        }
+
         public override void Die()
         {
+            // Capture velocity before base.Die() clears physics state.
+            Vector3 deathVelocity = Speed;
+
             base.Die();
 
-            if(Health<=0f)
+            if (Health <= 0f)
+            {
+                // XP fragments drift in the asteroid's direction at 25% of its speed.
+                Vector3 xpSpeed = deathVelocity * 0.25f;
                 for (int i = 0; i < 3; i++)
-                    PowerupController.Instance.Spawn(Position + new Vector3(Helper.RandomFloat(-3f, 3f), Helper.RandomFloat(-3f, 3f), 0f));
+                    PowerupController.Instance.Spawn(
+                        Position + new Vector3(Helper.RandomFloat(-3f, 3f), Helper.RandomFloat(-3f, 3f), 0f),
+                        xpSpeed);
+            }
         }
 
         

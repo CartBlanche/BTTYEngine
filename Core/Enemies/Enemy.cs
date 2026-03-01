@@ -1,4 +1,6 @@
-﻿using Microsoft.Xna.Framework;
+﻿using BepuPhysics;
+using BepuPhysics.Collidables;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +8,7 @@ using System.Text;
 
 namespace VoxelShooter
 {
-    public class Enemy
+    public class Enemy : IEntity
     {
         public EnemyType Type;
 
@@ -32,6 +34,9 @@ namespace VoxelShooter
 
         public float hitAlpha = 0f;
 
+        protected BodyHandle _physicsBody;
+        protected bool _physicsInitialized;
+
         public double attackRate = 1000;
         public double currentAttackTime = 0;
 
@@ -43,11 +48,71 @@ namespace VoxelShooter
             spriteSheet = sprite;
         }
 
+        public virtual void InitPhysics(PhysicsManager physics)
+        {
+            var sphere = new Sphere(3f);
+            var inertia = sphere.ComputeInertia(1f);
+            inertia.InverseInertiaTensor = default; // lock rotation
+            var shapeIndex = physics.Simulation.Shapes.Add(sphere);
+            _physicsBody = physics.Simulation.Bodies.Add(
+                BodyDescription.CreateDynamic(
+                    new RigidPose(new System.Numerics.Vector3(Position.X, Position.Y, Position.Z)),
+                    new BodyVelocity(),
+                    inertia,
+                    new CollidableDescription(shapeIndex, 0.1f),
+                    new BodyActivityDescription(0.01f)));
+            EntityRegistry.Instance.Register(_physicsBody, this);
+            _physicsInitialized = true;
+        }
+
+        public void DestroyPhysics(PhysicsManager physics)
+        {
+            if (!_physicsInitialized) return;
+            EntityRegistry.Instance.Unregister(_physicsBody);
+            physics.Simulation.Bodies.Remove(_physicsBody);
+            _physicsInitialized = false;
+        }
+
+        // Called after Wave.Update() assigns e.Position directly, to keep the Bepu body in sync.
+        public void SyncPhysicsToPosition()
+        {
+            if (!_physicsInitialized) return;
+            var body = PhysicsManager.Instance.Simulation.Bodies.GetBodyReference(_physicsBody);
+            body.Pose.Position = new System.Numerics.Vector3(Position.X, Position.Y, Position.Z);
+            body.Awake = true;
+        }
+
+        public virtual void OnCollision(IEntity other)
+        {
+            if (other is Hero hero)
+                hero.DoHit(Position, null);
+        }
+
         public virtual void Update(GameTime gameTime, VoxelWorld gameWorld, Hero gameHero)
         {
-            CheckCollisions(gameWorld, gameHero);
+            float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
-            Position += Speed;
+            if (_physicsInitialized)
+            {
+                // Read position — get a fresh ref, valid only until the next Bodies mutation.
+                var bpos = PhysicsManager.Instance.Simulation.Bodies.GetBodyReference(_physicsBody).Pose.Position;
+                Position = new Microsoft.Xna.Framework.Vector3(bpos.X, bpos.Y, bpos.Z);
+            }
+
+            CheckCollisions(gameWorld, gameHero);  // may call Die() → DestroyPhysics() → _physicsInitialized=false
+
+            if (_physicsInitialized && dt > 0f)
+            {
+                // Re-check and re-fetch after CheckCollisions — the old ref may be stale if Die() was called.
+                var vel = Speed / dt;
+                var bodyWrite = PhysicsManager.Instance.Simulation.Bodies.GetBodyReference(_physicsBody);
+                bodyWrite.Velocity.Linear = new System.Numerics.Vector3(vel.X, vel.Y, vel.Z);
+                bodyWrite.Awake = true;
+            }
+            else if (!_physicsInitialized)
+            {
+                Position += Speed;
+            }
             
             animTime += gameTime.ElapsedGameTime.TotalMilliseconds;
             if (animTime >= animTargetTime)
@@ -101,8 +166,7 @@ namespace VoxelShooter
 
         public virtual void Die()
         {
-
-
+            DestroyPhysics(PhysicsManager.Instance);
 
             int count = 0;
             for (int x = 0; x < spriteSheet.X_SIZE; x++)
@@ -135,7 +199,13 @@ namespace VoxelShooter
             Voxel checkVoxel;
             Vector3 checkPos;
 
-            if (gameHero.CollisionBox.Intersects(boundingSphere)) { gameHero.DoHit(Position, null); }
+            // Physics-enabled enemies get hero-collision via Bepu collision events.
+            // Non-physics enemies (Turret, etc.) fall back to a manual sphere check.
+            if (!_physicsInitialized)
+            {
+                if (new BoundingSphere(Position, 3f).Intersects(new BoundingSphere(gameHero.Position, 3f)))
+                    OnCollision(gameHero);
+            }
 
             if (Speed.Y < 0f)
             {

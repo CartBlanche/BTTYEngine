@@ -82,6 +82,10 @@ namespace VoxelShooter
                     break;
 			}
 
+            // Turrets are stationary — skip Bepu for now (handled in a future pass).
+            if (type != EnemyType.Turret && PhysicsManager.Instance != null)
+                e.InitPhysics(PhysicsManager.Instance);
+
             Enemies.Add(e);
             return e;
 		}
@@ -119,9 +123,21 @@ namespace VoxelShooter
 
 			for(int i=Enemies.Count-1;i>=0;i--) Enemies[i].Update(gameTime, gameWorld, gameHero);
 
+            // Destroy physics bodies for enemies scrolled off-screen (Die() handles the health=0 case).
+            if (PhysicsManager.Instance != null)
+                foreach (var en in Enemies)
+                    if (en.Active && en.Position.X < scrollPos - 110f)
+                        en.DestroyPhysics(PhysicsManager.Instance);
+
 			Enemies.RemoveAll(en => !en.Active || en.Position.X<scrollPos-110f);
 
             foreach (Wave w in Waves) w.Update(gameTime, scrollSpeed);
+
+            // Wave.Update() assigns e.Position directly; sync those positions back to Bepu
+            // bodies so that Enemy.Update() reads the correct formation position next frame.
+            if (PhysicsManager.Instance != null)
+                foreach (var en in Enemies)
+                    en.SyncPhysicsToPosition();
 
 			drawEffect.World = gameCamera.WorldMatrix;
 			drawEffect.View = gameCamera.ViewMatrix;

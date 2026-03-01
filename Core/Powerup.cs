@@ -22,6 +22,44 @@ namespace VoxelShooter
 
         public void Update(GameTime gameTime, VoxelWorld gameWorld, Hero gameHero, float scrollPos)
         {
+            // Terrain bounce: reflect each velocity component on impact with a random
+            // restitution (65–85%) so bounces diminish naturally.  A small lateral jitter
+            // on floor/ceiling hits approximates an irregular surface normal.
+            float checkZ = Position.Z - 1f;
+            if (Speed.Y < 0f)
+            {
+                var check = new Vector3(Position.X, Position.Y - 2f, checkZ);
+                var vox = gameWorld.GetVoxel(check);
+                if (vox.Active && gameWorld.CanCollideWith(vox.Type))
+                {
+                    Speed.Y = Math.Abs(Speed.Y) * (0.65f + Helper.RandomFloat(0f, 0.2f));
+                    Speed.X += Helper.RandomFloat(-0.03f, 0.03f);
+                }
+            }
+            else if (Speed.Y > 0f)
+            {
+                var check = new Vector3(Position.X, Position.Y + 2f, checkZ);
+                var vox = gameWorld.GetVoxel(check);
+                if (vox.Active && gameWorld.CanCollideWith(vox.Type))
+                {
+                    Speed.Y = -Math.Abs(Speed.Y) * (0.65f + Helper.RandomFloat(0f, 0.2f));
+                    Speed.X += Helper.RandomFloat(-0.03f, 0.03f);
+                }
+            }
+            if (Speed.X < 0f)
+            {
+                var check = new Vector3(Position.X - 2f, Position.Y, checkZ);
+                var vox = gameWorld.GetVoxel(check);
+                if (vox.Active && gameWorld.CanCollideWith(vox.Type))
+                    Speed.X = Math.Abs(Speed.X) * (0.65f + Helper.RandomFloat(0f, 0.2f));
+            }
+            else if (Speed.X > 0f)
+            {
+                var check = new Vector3(Position.X + 2f, Position.Y, checkZ);
+                var vox = gameWorld.GetVoxel(check);
+                if (vox.Active && gameWorld.CanCollideWith(vox.Type))
+                    Speed.X = -Math.Abs(Speed.X) * (0.65f + Helper.RandomFloat(0f, 0.2f));
+            }
 
             Position += Speed;
             Rotation += 0.04f;

@@ -1,4 +1,6 @@
-﻿using Microsoft.Xna.Framework;
+﻿using BepuPhysics;
+using BepuPhysics.Collidables;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using System;
@@ -9,7 +11,7 @@ using System.Text;
 
 namespace VoxelShooter
 {
-    public class Hero
+    public class Hero : IEntity
     {
         public Vector3 Position;
         public Vector3 Speed;
@@ -34,6 +36,8 @@ namespace VoxelShooter
         double fireCooldown = 0;
         double rocketCooldown = 0;
         public float hitAlpha = 0f;
+        double _hitImmunityMs = 0;
+        Vector3 _knockback;
 
         int powerupLevel = 0;
 
@@ -44,6 +48,8 @@ namespace VoxelShooter
 
         public float[] xpLevels = new float[] { 6f, 18f, 40f, 68f, 100f };
         //public float[] xpLevels = new float[] { 1f, 3f, 5f, 8f, 10f };
+
+        BodyHandle _physicsBody;
 
         public Hero()
         {
@@ -65,19 +71,57 @@ namespace VoxelShooter
 
         }
 
+        public void InitPhysics(PhysicsManager physics)
+        {
+            var sphere = new Sphere(3f);
+            var inertia = sphere.ComputeInertia(1f);
+            inertia.InverseInertiaTensor = default; // zero = locked rotation (no tumbling)
+            var shapeIndex = physics.Simulation.Shapes.Add(sphere);
+            _physicsBody = physics.Simulation.Bodies.Add(
+                BodyDescription.CreateDynamic(
+                    new RigidPose(new System.Numerics.Vector3(Position.X, Position.Y, Position.Z)),
+                    new BodyVelocity(),
+                    inertia,
+                    new CollidableDescription(shapeIndex, 0.1f),
+                    new BodyActivityDescription(0.01f)));
+            EntityRegistry.Instance.Register(_physicsBody, this);
+        }
+
+        public void DestroyPhysics(PhysicsManager physics)
+        {
+            EntityRegistry.Instance.Unregister(_physicsBody);
+            physics.Simulation.Bodies.Remove(_physicsBody);
+        }
+
+        // Damage is applied by the enemy's OnCollision calling hero.DoHit.
+        public void OnCollision(IEntity other) { }
+
         public void Update(GameTime gameTime, ICamera gameCamera, VoxelWorld gameWorld, float scrollSpeed)
         {
+            // Read authoritative position from Bepu (already stepped this frame in VoxelShooter.Update).
+            var body = PhysicsManager.Instance.Simulation.Bodies.GetBodyReference(_physicsBody);
+            var bpos = body.Pose.Position;
+            Position = new Microsoft.Xna.Framework.Vector3(bpos.X, bpos.Y, bpos.Z);
+
             Vector2 v2Pos= new Vector2(Position.X,Position.Y);
 
-            tempSpeed = Speed;
+            tempSpeed = Speed + _knockback;
             tempSpeed.X += scrollSpeed;
+            _knockback *= 0.82f; // decay knockback each frame (~10 frames to reach 10%)
 
             CollisionBox.Min = Position - (collisionBoxSize/2);
             CollisionBox.Max = Position + (collisionBoxSize/2);
 
             CheckCollisions(gameWorld, gameCamera);
 
-            Position += tempSpeed;
+            // Write clamped velocity to Bepu for next frame's physics step.
+            float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            if (dt > 0f)
+            {
+                var vel = tempSpeed / dt;
+                body.Velocity.Linear = new System.Numerics.Vector3(vel.X, vel.Y, vel.Z);
+                body.Awake = true;
+            }
 
             if(Helper.Random.Next(3)==1)
                 ParticleController.Instance.Spawn(Position + new Vector3(-4f, 0f, 0f),
@@ -89,8 +133,7 @@ namespace VoxelShooter
 
             fireCooldown -= gameTime.ElapsedGameTime.TotalMilliseconds;
             rocketCooldown -= gameTime.ElapsedGameTime.TotalMilliseconds;
-
-            
+            _hitImmunityMs -= gameTime.ElapsedGameTime.TotalMilliseconds;
 
             if (hitAlpha > 0f) hitAlpha -= 0.1f;
 
@@ -122,13 +165,27 @@ namespace VoxelShooter
 
         public void DoHit(Vector3 pos, Projectile proj)
         {
+            if (_hitImmunityMs > 0) return;
             hitAlpha = 1f;
+            _hitImmunityMs = 500;
 
             if (proj != null) // A null projectile means an enemy collided with the player
                 Health -= proj.Damage/2f;
             else
                 Health -= 0.1f;
         }
+
+        // Damage overload used by velocity-scaled impacts (e.g. asteroids).
+        public void DoHit(Vector3 pos, float damage)
+        {
+            if (_hitImmunityMs > 0) return;
+            hitAlpha = 1f;
+            _hitImmunityMs = 500;
+            Health -= damage;
+        }
+
+        // Push the ship in the given direction for a few frames (decays at 18%/frame).
+        public void ApplyKnockback(Vector3 impulse) => _knockback += impulse;
 
         public void Draw(GraphicsDevice gd)
         {
