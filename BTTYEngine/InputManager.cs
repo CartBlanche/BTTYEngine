@@ -125,12 +125,26 @@ namespace VoxelShooter
             current.KeyState.IsKeyDown(Keys.Escape) ||
             current.PadState.Buttons.Back == ButtonState.Pressed;
 
-        /// <summary>
-        /// True on the frame the player toggles the camera view,
-        /// keyboard Tab, or gamepad right-stick click (RS / R3).
-        /// </summary>
-        public bool IsCameraTogglePressed() =>
-            IsKeyPressed(Keys.Tab) ||
-            IsButtonPressed(Buttons.RightStick);
+        // ── Camera selection (keyboard 1-4, gamepad shoulder buttons) ────────────
+
+        /// <summary>Direct select: keyboard 1–4 selects the corresponding camera.</summary>
+        public bool IsCameraSelectPressed(int cameraIndex)
+        {
+            Keys key = cameraIndex switch
+            {
+                1 => Keys.D1,
+                2 => Keys.D2,
+                3 => Keys.D3,
+                4 => Keys.D4,
+                _ => Keys.None,
+            };
+            return key != Keys.None && IsKeyPressed(key);
+        }
+
+        /// <summary>Cycle to next camera: gamepad RightShoulder (RB/R1).</summary>
+        public bool IsCameraNextPressed() => IsButtonPressed(Buttons.RightShoulder);
+
+        /// <summary>Cycle to previous camera: gamepad LeftShoulder (LB/L1).</summary>
+        public bool IsCameraPrevPressed() => IsButtonPressed(Buttons.LeftShoulder);
     }
 }
