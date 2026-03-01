@@ -20,6 +20,45 @@ namespace VoxelShooter
         public Vector3 Position { get; set; }
         public Vector3 Target   { get; set; }
 
+        // ── Screen-shake ─────────────────────────────────────────────────────────
+
+        static readonly System.Random _shakeRng = new System.Random();
+
+        float _shakeAmplitude;
+
+        /// <summary>
+        /// Current per-frame XY eye offset produced by the active shake.
+        /// Add this to the camera eye position inside subclass Update() / RebuildView().
+        /// </summary>
+        protected Vector3 ShakeOffset { get; private set; }
+
+        /// <summary>
+        /// Start (or reinforce) a screen-shake.  The new amplitude is max'd with any
+        /// in-progress shake so a fresh hit never cancels an existing one.
+        /// Override in a subclass to change the profile (e.g. dampen for iso, add roll).
+        /// </summary>
+        public virtual void TriggerShake(float amplitude)
+            => _shakeAmplitude = System.Math.Max(_shakeAmplitude, amplitude);
+
+        /// <summary>
+        /// Decay the shake amplitude and refresh <see cref="ShakeOffset"/>.
+        /// Call once at the top of each subclass Update().
+        /// </summary>
+        protected void UpdateShake()
+        {
+            _shakeAmplitude *= 0.85f;
+            if (_shakeAmplitude > 0.01f)
+            {
+                float r() => (float)(_shakeRng.NextDouble() * 2.0 - 1.0) * _shakeAmplitude;
+                ShakeOffset = new Vector3(r(), r(), 0f);
+            }
+            else
+            {
+                _shakeAmplitude = 0f;
+                ShakeOffset = Vector3.Zero;
+            }
+        }
+
         // ── Engine internals ─────────────────────────────────────────────────────
 
         protected GraphicsDevice GraphicsDevice { get; }

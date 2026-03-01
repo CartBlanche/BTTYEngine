@@ -67,6 +67,7 @@ namespace VoxelShooter
 
         public override void Update(GameTime gameTime, VoxelWorld world)
         {
+            UpdateShake();
             Position = Vector3.Lerp(Position, Target, MoveSpeed);
             RebuildView();
         }
@@ -90,7 +91,7 @@ namespace VoxelShooter
 
             // Vector3.Up as up-hint matches Y-up convention.
             ViewMatrix = Matrix.CreateLookAt(
-                Position + eyeOffset,
+                Position + eyeOffset + ShakeOffset,
                 Position,
                 Vector3.Up);
 

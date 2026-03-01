@@ -60,11 +60,14 @@ namespace VoxelShooter
 
         public override void Update(GameTime gameTime, VoxelWorld world)
         {
+            UpdateShake();
+
             // Smooth-follow: lerp the eye position toward the scroll target
             Position = Vector3.Lerp(Position, Target, MoveSpeed);
 
-            // Rebuild view: eye is at Position+Offset, looking at Position, Y-up convention
-            ViewMatrix = Matrix.CreateLookAt(Position + Offset, Position, Vector3.Up);
+            // ShakeOffset nudges the eye in the screen plane without moving the look-at target,
+            // producing a pure translational shake that feels like camera jolt on impact.
+            ViewMatrix = Matrix.CreateLookAt(Position + Offset + ShakeOffset, Position, Vector3.Up);
 
             BoundingFrustum.Matrix = ViewMatrix * ProjectionMatrix;
         }

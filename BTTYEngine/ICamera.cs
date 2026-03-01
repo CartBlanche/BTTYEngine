@@ -32,5 +32,12 @@ namespace VoxelShooter
         /// Update camera matrices, frustum and any movement logic each frame.
         /// </summary>
         void Update(GameTime gameTime, VoxelWorld world);
+
+        /// <summary>
+        /// Trigger a screen-shake of the given peak amplitude (world units).
+        /// Amplitude decays automatically each frame; calling again before the previous
+        /// shake finishes takes the maximum of the two (no cancellation).
+        /// </summary>
+        void TriggerShake(float amplitude);
     }
 }

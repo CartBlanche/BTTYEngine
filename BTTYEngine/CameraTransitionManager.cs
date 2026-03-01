@@ -69,6 +69,16 @@ namespace VoxelShooter
         // ── Public API ────────────────────────────────────────────────────────────
 
         /// <summary>
+        /// Trigger a screen-shake on all active cameras.  Passes to both <c>from</c>
+        /// and <c>to</c> so the blended output stays shaken during a transition.
+        /// </summary>
+        public void TriggerShake(float amplitude)
+        {
+            from.TriggerShake(amplitude);
+            if (to != from) to.TriggerShake(amplitude);
+        }
+
+        /// <summary>
         /// Begin blending to <paramref name="target"/> over <paramref name="durationSeconds"/>.
         /// The incoming camera picks up the current position/target so there is no snap.
         /// </summary>
