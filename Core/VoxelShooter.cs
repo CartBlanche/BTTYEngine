@@ -23,9 +23,14 @@ namespace VoxelShooter
         VoxelSprite tilesSprite;
         VoxelWorld gameWorld;
 
-        SideScrollingCamera sideCamera;
+        SideScrollingCamera  sideCamera;
         IsometricCamera      isoCamera;
+        FirstPersonCamera    fpCamera;
+        TopDownCamera        tdCamera;
         CameraTransitionManager cameraManager;
+
+        int      _activeCameraIndex = 1;   // 1=side, 2=iso, 3=fp, 4=topdown
+        ICamera[] _cameras;                // populated in LoadContent (index 0 unused)
 
         BasicEffect drawEffect;
 
@@ -112,6 +117,17 @@ namespace VoxelShooter
             isoCamera.Position  = sideCamera.Position;
             isoCamera.Target    = sideCamera.Target;
 
+            fpCamera          = new FirstPersonCamera(GraphicsDevice, GraphicsDevice.Viewport);
+            fpCamera.Position = sideCamera.Position;
+            fpCamera.Target   = sideCamera.Target;
+
+            tdCamera          = new TopDownCamera(GraphicsDevice, GraphicsDevice.Viewport);
+            tdCamera.Position = sideCamera.Position;
+            tdCamera.Target   = sideCamera.Target;
+
+            _cameras = new ICamera[] { null, sideCamera, isoCamera, fpCamera, tdCamera };
+            // index 0 unused so _activeCameraIndex maps 1-4 directly
+
             cameraManager = new CameraTransitionManager(sideCamera);
 
             physicsManager = new PhysicsManager();
@@ -162,13 +178,23 @@ namespace VoxelShooter
 
             if (!IsActive) return;
 
-            // ── Camera transition trigger (Tab / RS = toggle) ──────────────────
-            if (inputManager.IsCameraTogglePressed())
+            // ── Camera selection: keys 1-4, RB=next, LB=prev ──────────────────
             {
-                if (cameraManager.ActiveCamera is SideScrollingCamera)
-                    cameraManager.TransitionTo(isoCamera, 1.5f);
-                else
-                    cameraManager.TransitionTo(sideCamera, 1.5f);
+                int requested = 0;
+                for (int i = 1; i <= 4; i++)
+                    if (inputManager.IsCameraSelectPressed(i)) { requested = i; break; }
+
+                if (requested == 0 && inputManager.IsCameraNextPressed())
+                    requested = (_activeCameraIndex % 4) + 1;   // 1→2→3→4→1
+
+                if (requested == 0 && inputManager.IsCameraPrevPressed())
+                    requested = ((_activeCameraIndex - 2 + 4) % 4) + 1;  // 1→4→3→2→1
+
+                if (requested != 0 && requested != _activeCameraIndex)
+                {
+                    _activeCameraIndex = requested;
+                    cameraManager.TransitionTo(_cameras[_activeCameraIndex], 1.5f);
+                }
             }
             // ─────────────────────────────────────────────────────────────────────
 
