@@ -212,6 +212,11 @@ namespace VoxelShooter
                 b?.OnCollision(a);
             });
 
+            // hitAlpha is set to 1.0 inside DoHit (called above via OnCollision).
+            // Check here, before Hero.Update() decrements it, for a reliable single-frame trigger.
+            if (gameHero.hitAlpha >= 0.95f)
+                cameraManager.TriggerShake(5f);
+
             cameraManager.Update(gameTime, gameWorld);
             gameWorld.Update(gameTime, cameraManager);
 
@@ -219,6 +224,11 @@ namespace VoxelShooter
 
             enemyController.Update(gameTime, cameraManager, gameHero, gameWorld, scrollPos, scrollSpeed);
             projectileController.Update(gameTime, cameraManager, gameHero, gameWorld, scrollPos);
+
+            // Catch laser/projectile hits that set hitAlpha during projectileController.Update()
+            // (these fire after cameraManager.Update(), so we trigger shake here for next frame).
+            if (gameHero.hitAlpha >= 0.95f)
+                cameraManager.TriggerShake(5f);
             particleController.Update(gameTime, cameraManager, gameWorld);
             powerupController.Update(gameTime, cameraManager, gameWorld, gameHero, scrollPos);
             gameStarfield.Update(gameTime, cameraManager, gameWorld, scrollSpeed);
