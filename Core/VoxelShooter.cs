@@ -262,6 +262,7 @@ namespace VoxelShooter
             // (these fire after cameraManager.Update(), so we trigger shake here for next frame).
             if (gameHero.hitAlpha >= 0.95f)
                 cameraManager.TriggerShake(5f);
+            GamePad.SetVibration(PlayerIndex.One, gameHero.hitAlpha, gameHero.hitAlpha);
             particleController.Update(gameTime, cameraManager, gameWorld);
             powerupController.Update(gameTime, cameraManager, gameWorld, gameHero, scrollPos);
             gameStarfield.Update(gameTime, cameraManager, gameWorld, scrollSpeed);
