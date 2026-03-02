@@ -34,6 +34,8 @@ namespace VoxelShooter
 
         public float hitAlpha = 0f;
 
+        // [SFX-EXPLODE] public static Microsoft.Xna.Framework.Audio.SoundEffect SfxExplosion;
+
         protected BodyHandle _physicsBody;
         protected bool _physicsInitialized;
 
@@ -166,6 +168,7 @@ namespace VoxelShooter
 
         public virtual void Die()
         {
+            // [SFX-EXPLODE] SfxExplosion?.Play(0.7f, (float)(new System.Random().NextDouble() * 0.4 - 0.2), 0f);
             DestroyPhysics(PhysicsManager.Instance);
 
             int count = 0;

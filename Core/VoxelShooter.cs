@@ -57,6 +57,8 @@ namespace VoxelShooter
 
         SpriteFont font;
 
+        // [MUS-BGM] Microsoft.Xna.Framework.Media.Song _bgm;
+
         Texture2D hudTex;
 
         public VoxelShooterGame()
@@ -91,6 +93,11 @@ namespace VoxelShooter
 
             font = Content.Load<SpriteFont>("font");
             hudTex = Content.Load<Texture2D>("hud");
+
+            // [MUS-BGM] _bgm = Content.Load<Microsoft.Xna.Framework.Media.Song>("Music/bgm");
+            // [MUS-BGM] Microsoft.Xna.Framework.Media.MediaPlayer.IsRepeating = true;
+            // [MUS-BGM] Microsoft.Xna.Framework.Media.MediaPlayer.Volume = 0.5f;
+            // [MUS-BGM] Microsoft.Xna.Framework.Media.MediaPlayer.Play(_bgm);
 
             tilesSprite = new VoxelSprite(16, 16, 16);
             LoadVoxels.LoadSprite(Path.Combine(Content.RootDirectory, "tiles.vxs"), ref tilesSprite);

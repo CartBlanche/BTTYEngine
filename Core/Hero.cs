@@ -43,6 +43,10 @@ namespace VoxelShooter
 
         bool orbActive;
         float orbAngle = -MathHelper.PiOver2;
+
+        // [SFX-LASER]   SoundEffect _sfxLaser;
+        // [SFX-HIT]     SoundEffect _sfxHit;
+        // [SFX-POWERUP] SoundEffect _sfxPowerup;
         Vector3 orbPosition;
         Vector3 orbRotation;
 
@@ -69,6 +73,9 @@ namespace VoxelShooter
             collisionBoxSize = new Vector3(10, 4f, 2f);
             CollisionBox = new BoundingBox();
 
+            // [SFX-LASER]   _sfxLaser   = content.Load<SoundEffect>("Sound/laser");
+            // [SFX-HIT]     _sfxHit     = content.Load<SoundEffect>("Sound/hit");
+            // [SFX-POWERUP] _sfxPowerup = content.Load<SoundEffect>("Sound/powerup");
         }
 
         public void InitPhysics(PhysicsManager physics)
@@ -168,6 +175,7 @@ namespace VoxelShooter
             if (_hitImmunityMs > 0) return;
             hitAlpha = 1f;
             _hitImmunityMs = 500;
+            // [SFX-HIT] _sfxHit.Play(0.8f, 0f, 0f);
 
             if (proj != null) // A null projectile means an enemy collided with the player
                 Health -= proj.Damage/2f;
@@ -181,6 +189,7 @@ namespace VoxelShooter
             if (_hitImmunityMs > 0) return;
             hitAlpha = 1f;
             _hitImmunityMs = 500;
+            // [SFX-HIT] _sfxHit.Play(0.8f, 0f, 0f);
             Health -= damage;
         }
 
@@ -242,6 +251,7 @@ namespace VoxelShooter
                     {
                         fireCooldown = 300;
                         ProjectileController.Instance.Spawn(ProjectileType.Laser1, this, Position+ new Vector3(3f,0f,0f), Matrix.Identity, new Vector3(2f, 0f, 0f), 2f, 2000, false);
+                        // [SFX-LASER] _sfxLaser.Play(0.4f, 0f, 0f);
                     }
                     break;
                 case 1:
@@ -251,6 +261,7 @@ namespace VoxelShooter
                         fireCooldown = 200;
                         ProjectileController.Instance.Spawn(ProjectileType.Laser2, this, Position + new Vector3(3f, -1f + (2f*fireswitch),0f), Matrix.Identity, new Vector3(2f, 0f, 0f), 3f, 2000, false);
                         fireswitch = 1 - fireswitch;
+                        // [SFX-LASER] _sfxLaser.Play(0.4f, 0.1f, 0f);
                     }
                     break;
                 case 3:
@@ -283,7 +294,7 @@ namespace VoxelShooter
                         }
 
                         fireswitch = 1 - fireswitch;
-
+                        // [SFX-LASER] _sfxLaser.Play(0.4f, 0.2f, 0f);
                     }
                     break;
             }
@@ -313,6 +324,7 @@ namespace VoxelShooter
         {
             powerupLevel++;
             if (powerupLevel >= 2) orbActive = true;
+            // [SFX-POWERUP] _sfxPowerup.Play(1f, 0f, 0f);
         }
 
         void CheckCollisions(VoxelWorld world, ICamera gameCamera)

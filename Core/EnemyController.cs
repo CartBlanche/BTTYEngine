@@ -60,6 +60,8 @@ namespace VoxelShooter
             LoadVoxels.LoadSprite(Path.Combine(content.RootDirectory, "enemies", "squid.vxs"), ref squid);
             spriteSheets.Add("Squid", squid);
 
+            // [SFX-EXPLODE] Enemy.SfxExplosion = content.Load<Microsoft.Xna.Framework.Audio.SoundEffect>("Sound/explosion");
+
             foreach (MapObject o in spawnLayer.Objects) Spawns.Add(o);
 		}
 
