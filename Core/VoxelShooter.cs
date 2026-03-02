@@ -100,7 +100,7 @@ namespace VoxelShooter
             // [MUS-BGM] Microsoft.Xna.Framework.Media.MediaPlayer.Play(_bgm);
 
             tilesSprite = new VoxelSprite(16, 16, 16);
-            LoadVoxels.LoadSprite(Path.Combine(Content.RootDirectory, "tiles.vxs"), ref tilesSprite);
+            BvxLoader.LoadSprite(Path.Combine(Content.RootDirectory, "tiles.bvx"), ref tilesSprite);
 
             gameMap = Content.Load<Map>("1");
             tileLayer = (TileLayer)gameMap.GetLayer("tiles");

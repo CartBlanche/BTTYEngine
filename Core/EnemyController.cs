@@ -48,16 +48,16 @@ namespace VoxelShooter
 		public void LoadContent(ContentManager content, MapObjectLayer spawnLayer)
 		{
 			VoxelSprite asteroid = new VoxelSprite(16,16,16);
-			LoadVoxels.LoadSprite(Path.Combine(content.RootDirectory, "enemies", "asteroids.vxs"), ref asteroid);
+            BvxLoader.LoadSprite(Path.Combine(content.RootDirectory, "enemies", "asteroids.bvx"), ref asteroid);
 			spriteSheets.Add("Asteroid", asteroid);
             VoxelSprite omega = new VoxelSprite(15,15,15);
-            LoadVoxels.LoadSprite(Path.Combine(content.RootDirectory, "enemies", "omega.vxs"), ref omega);
+            BvxLoader.LoadSprite(Path.Combine(content.RootDirectory, "enemies", "omega.bvx"), ref omega);
             spriteSheets.Add("Omega", omega);
             VoxelSprite turret = new VoxelSprite(15, 15, 15);
-            LoadVoxels.LoadSprite(Path.Combine(content.RootDirectory, "enemies", "turret.vxs"), ref turret);
+            BvxLoader.LoadSprite(Path.Combine(content.RootDirectory, "enemies", "turret.bvx"), ref turret);
             spriteSheets.Add("Turret", turret);
             VoxelSprite squid = new VoxelSprite(15, 15, 15);
-            LoadVoxels.LoadSprite(Path.Combine(content.RootDirectory, "enemies", "squid.vxs"), ref squid);
+            BvxLoader.LoadSprite(Path.Combine(content.RootDirectory, "enemies", "squid.bvx"), ref squid);
             spriteSheets.Add("Squid", squid);
 
             // [SFX-EXPLODE] Enemy.SfxExplosion = content.Load<Microsoft.Xna.Framework.Audio.SoundEffect>("Sound/explosion");

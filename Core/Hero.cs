@@ -63,7 +63,7 @@ namespace VoxelShooter
         public void LoadContent(ContentManager content, GraphicsDevice gd)
         {
             shipSprite = new VoxelSprite(15, 15, 15);
-            LoadVoxels.LoadSprite(Path.Combine(content.RootDirectory, "ship.vxs"), ref shipSprite);
+            BvxLoader.LoadSprite(Path.Combine(content.RootDirectory, "ship.bvx"), ref shipSprite);
 
             drawEffect = new BasicEffect(gd)
             {

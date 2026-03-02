@@ -13,6 +13,9 @@ namespace VoxelShooter
 
         public int CurrentFrame = 0;
 
+        /// <summary>Animation playback speed in frames per second. 0 means no animation.</summary>
+        public int FrameRate = 0;
+
         public int X_SIZE, Y_SIZE, Z_SIZE;
 
         GraphicsDevice graphicsDevice;
