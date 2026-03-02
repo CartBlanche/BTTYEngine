@@ -23,7 +23,7 @@ namespace VoxelShooter
             int workerIndex, CollidablePair pair,
             int childIndexA, int childIndexB) => true;
 
-        // Called for top-level pairs — set material and queue collision event.
+        // Called for top-level pairs; set material and queue collision event.
         public bool ConfigureContactManifold<TManifold>(
             int workerIndex, CollidablePair pair, ref TManifold manifold,
             out PairMaterialProperties pairMaterial)
@@ -40,7 +40,7 @@ namespace VoxelShooter
             return true;
         }
 
-        // Called for child pairs within compound shapes — no special handling needed.
+        // Called for child pairs within compound shapes; no special handling needed.
         public bool ConfigureContactManifold(
             int workerIndex, CollidablePair pair,
             int childIndexA, int childIndexB,

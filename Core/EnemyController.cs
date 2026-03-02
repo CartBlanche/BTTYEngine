@@ -82,7 +82,7 @@ namespace VoxelShooter
                     break;
 			}
 
-            // Turrets are stationary — skip Bepu for now (handled in a future pass).
+            // Turrets are stationary; skip Bepu for now (handled in a future pass).
             if (type != EnemyType.Turret && PhysicsManager.Instance != null)
                 e.InitPhysics(PhysicsManager.Instance);
 

@@ -25,7 +25,7 @@ namespace VoxelShooter
                 new SolveDescription(velocityIterationCount: 4, substepCount: 1));
         }
 
-        // Single-threaded step — sufficient for a small side-scroller.
+        // Single-threaded step; sufficient for a small side-scroller.
         // Guard against zero dt on the first frame (Bepu requires dt > 0).
         public void Step(float deltaTimeSeconds)
         {

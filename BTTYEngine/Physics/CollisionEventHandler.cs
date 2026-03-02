@@ -14,7 +14,7 @@ namespace VoxelShooter
 
         private readonly ConcurrentQueue<CollisionEvent> _pending = new();
 
-        // Called from Bepu worker threads — no MonoGame API calls here.
+        // Called from Bepu worker threads; no MonoGame API calls here.
         public void OnContact(CollidablePair pair, int workerIndex)
         {
             if (pair.A.Mobility == CollidableMobility.Dynamic &&

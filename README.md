@@ -169,7 +169,7 @@ VoxelShooter/
 └── TiledContentPipeline/   - TiledContentPipeline source
 ```
 
-`Core` references `BTTYEngine` via a `<ProjectReference>`. The platform projects (`Desktop`, `Windows`, etc.) reference `Core` as before — nothing changes from their perspective.
+`Core` references `BTTYEngine` via a `<ProjectReference>`. The platform projects (`Desktop`, `Windows`, etc.) reference `Core` as before : nothing changes from their perspective.
 
 ---
 
@@ -179,13 +179,13 @@ The engine lives in `BTTYEngine/` and is intentionally game-agnostic. VoxelShoot
 
 What's in there:
 
-- **Camera system** — `ICamera` interface, `BaseCamera`, `SideScrollingCamera`, `IsometricCamera`, and `CameraTransitionManager` for smooth blending between any two cameras
-- **Voxel engine** — `VoxelWorld`, `Chunk`, mesh building, frustum culling, explosion system
-- **Particles** — pooled `ParticleController` and `ParticleCube` for voxel-style debris
-- **Input** — `InputManager` wrapping keyboard and gamepad
-- **Utilities** — `Helper` (random, geometry helpers)
+- **Camera system** : `ICamera` interface, `BaseCamera`, `SideScrollingCamera`, `IsometricCamera`, and `CameraTransitionManager` for smooth blending between any two cameras
+- **Voxel engine** : `VoxelWorld`, `Chunk`, mesh building, frustum culling, explosion system
+- **Particles** : pooled `ParticleController` and `ParticleCube` for voxel-style debris
+- **Input** : `InputManager` wrapping keyboard and gamepad
+- **Utilities** : `Helper` (random, geometry helpers)
 
-The namespace is still `VoxelShooter` for now — a rename to `BTTYEngine` is planned when the engine moves to its own repo or NuGet package.
+The namespace is still `VoxelShooter` for now : a rename to `BTTYEngine` is planned when the engine moves to its own repo or NuGet package.
 
 ---
 

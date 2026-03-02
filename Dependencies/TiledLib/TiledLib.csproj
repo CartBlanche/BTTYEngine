@@ -4,11 +4,6 @@
     <TargetFramework>net8.0</TargetFramework>
     <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
-  <!-- Include all TiledLib source from the existing folder, excluding legacy Properties -->
-  <ItemGroup>
-    <Compile Include="..\..\TiledLib\**\*.cs"
-             Exclude="..\..\TiledLib\Properties\**\*.cs" />
-  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.5-preview.3">
       <PrivateAssets>All</PrivateAssets>

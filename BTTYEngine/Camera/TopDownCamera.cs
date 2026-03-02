@@ -6,7 +6,7 @@ namespace VoxelShooter
     /// <summary>
     /// Pure top-down camera: eye directly above the hero looking straight down.
     /// The up-hint is <see cref="ForwardHint"/> (+X = scroll direction) so that
-    /// the scroll direction maps to the top of the screen — natural for a horizontal shooter.
+    /// the scroll direction maps to the top of the screen; natural for a horizontal shooter.
     /// Inherits screen-shake from <see cref="BaseCamera"/>.
     /// </summary>
     public class TopDownCamera : BaseCamera

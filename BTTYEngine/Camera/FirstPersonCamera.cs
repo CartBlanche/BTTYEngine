@@ -5,7 +5,7 @@ namespace VoxelShooter
 {
     /// <summary>
     /// First-person camera: eye positioned at the hero with a fixed look-ahead along the
-    /// scroll direction (+X). Pitch and yaw are locked — no mouse look needed.
+    /// scroll direction (+X). Pitch and yaw are locked; no mouse look needed.
     /// Inherits screen-shake from <see cref="BaseCamera"/>.
     /// </summary>
     public class FirstPersonCamera : BaseCamera

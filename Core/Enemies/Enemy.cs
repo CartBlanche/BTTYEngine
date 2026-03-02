@@ -94,7 +94,7 @@ namespace VoxelShooter
 
             if (_physicsInitialized)
             {
-                // Read position — get a fresh ref, valid only until the next Bodies mutation.
+                // Read position; get a fresh ref, valid only until the next Bodies mutation.
                 var bpos = PhysicsManager.Instance.Simulation.Bodies.GetBodyReference(_physicsBody).Pose.Position;
                 Position = new Microsoft.Xna.Framework.Vector3(bpos.X, bpos.Y, bpos.Z);
             }
@@ -103,7 +103,7 @@ namespace VoxelShooter
 
             if (_physicsInitialized && dt > 0f)
             {
-                // Re-check and re-fetch after CheckCollisions — the old ref may be stale if Die() was called.
+                // Re-check and re-fetch after CheckCollisions; the old ref may be stale if Die() was called.
                 var vel = Speed / dt;
                 var bodyWrite = PhysicsManager.Instance.Simulation.Bodies.GetBodyReference(_physicsBody);
                 bodyWrite.Velocity.Linear = new System.Numerics.Vector3(vel.X, vel.Y, vel.Z);
