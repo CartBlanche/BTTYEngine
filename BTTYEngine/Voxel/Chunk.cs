@@ -88,7 +88,7 @@ namespace VoxelShooter
 
                         Vector3 worldOffset = new Vector3(worldX*(X_SIZE*Voxel.SIZE), -(worldY*(Y_SIZE*Voxel.SIZE)),worldZ*(Z_SIZE*Voxel.SIZE)) + (new Vector3(x*Voxel.SIZE, -(y*Voxel.SIZE), z*Voxel.SIZE));
 
-                        //if (!IsVoxelAt(x, y, z - 1)) MakeQuad(worldOffset, new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(0f, 0f, -1f), CalcLighting(x,y,z, new Color(Voxels[x, y, z].TR, Voxels[x, y, z].TG,Voxels[x, y, z].TB)));
+                        if (!IsVoxelAt(x, y, z - 1)) MakeQuad(worldOffset, new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(0f, 0f, -1f), CalcLighting(x,y,z, new Color(Voxels[x, y, z].TR, Voxels[x, y, z].TG,Voxels[x, y, z].TB)));
                         if (!IsVoxelAt(x, y, z + 1)) MakeQuad(worldOffset, new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(0f, 0f, 1f), CalcLighting(x, y, z + 2, new Color(Voxels[x, y, z].TR, Voxels[x, y, z].TG, Voxels[x, y, z].TB)));
                         if (!IsVoxelAt(x - 1, y, z)) MakeQuad(worldOffset, new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(-1f, 0f, 0f), CalcLighting(x - 1, y, z, new Color(Voxels[x, y, z].SR, Voxels[x, y, z].SG, Voxels[x, y, z].SB)));
                         if (!IsVoxelAt(x + 1, y, z)) MakeQuad(worldOffset, new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(1f, 0f, 0f), CalcLighting(x + 1, y, z, new Color(Voxels[x, y, z].SR, Voxels[x, y, z].SG, Voxels[x, y, z].SB)));
@@ -147,8 +147,8 @@ namespace VoxelShooter
             {
                 float intensity = (intensityFactor / 4f) * (4f - (float)zz);
                 if ((!lightingDirs[0]) && IsVoxelAt(x, y, z - zz)) { light -= (intensity * 4f); lightingDirs[0] = true; }
-                //if ((!lightingDirs[0]) && IsVoxelAt(x, y, z - (zz + 5))) { light -= intensity; lightingDirs[0] = true; }
-                //if ((!lightingDirs[0]) && IsVoxelAt(x, y, z - (zz + 10))) { light -= intensity; lightingDirs[0] = true; }
+                if ((!lightingDirs[0]) && IsVoxelAt(x, y, z - (zz + 5))) { light -= intensity; lightingDirs[0] = true; }
+                if ((!lightingDirs[0]) && IsVoxelAt(x, y, z - (zz + 10))) { light -= intensity; lightingDirs[0] = true; }
                 if ((!lightingDirs[1]) && IsVoxelAt(x - zz, y - zz, z - zz)) { light -= intensity; lightingDirs[1] = true; }
                 if ((!lightingDirs[2]) && IsVoxelAt(x, y - zz, z - zz)) { light -= intensity; lightingDirs[2] = true; }
                 if ((!lightingDirs[3]) && IsVoxelAt(x + zz, y - zz, z - zz)) { light -= intensity; lightingDirs[3] = true; }

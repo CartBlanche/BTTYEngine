@@ -5,9 +5,8 @@
     <RollForward>Major</RollForward>
     <PublishReadyToRun>false</PublishReadyToRun>
     <TieredCompilation>false</TieredCompilation>
-  </PropertyGroup>
-  <PropertyGroup>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\icon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Core\Core.csproj" />
