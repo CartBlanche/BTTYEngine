@@ -36,7 +36,7 @@ namespace VoxelShooter
         public void LoadContent(ContentManager content)
         {
             projectileStrip = new VoxelSprite(5, 5, 5);
-            LoadVoxels.LoadSprite(Path.Combine(content.RootDirectory, "projectiles.vxs"), ref projectileStrip);
+            BvxLoader.LoadSprite(Path.Combine(content.RootDirectory, "projectiles.bvx"), ref projectileStrip);
         }
 
         public void Update(GameTime gameTime, ICamera gameCamera, Hero gameHero, VoxelWorld gameWorld, float scrollPos)
