@@ -56,8 +56,8 @@ namespace VoxelShooter
 
             spawnY = pos.Y;
             Enemy e = null;
-            if(Type== WaveType.Circle) e = EnemyController.Instance.Spawn(EnemyType, Position + new Vector3(0, 0, 200f), props);
-            if (Type == WaveType.Line) e = EnemyController.Instance.Spawn(EnemyType, (Position - (lineEnd/2f)) + new Vector3(0, 0, 200f), props);
+            if(Type== WaveType.Circle) e = EnemyController.Instance.Spawn(EnemyType, Position + new Vector3(0, 0, 200f + EnemiesSpawned), props);
+            if (Type == WaveType.Line) e = EnemyController.Instance.Spawn(EnemyType, (Position - (lineEnd/2f)) + new Vector3(0, 0, 200f + EnemiesSpawned), props);
             e.Scale = 0f;
             Members.Add(e);
             EnemiesSpawned++;
@@ -93,7 +93,7 @@ namespace VoxelShooter
 
                     if (spawnDist > MathHelper.TwoPi / ((float)EnemyCount + 1) && EnemiesSpawned < EnemyCount)
                     {
-                        Enemy e = EnemyController.Instance.Spawn(EnemyType, Position + new Vector3(0, 0, 200f), Props);
+                        Enemy e = EnemyController.Instance.Spawn(EnemyType, Position + new Vector3(0, 0, 200f + EnemiesSpawned), Props);
                         e.Scale = 0f;
                         Members.Add(e);
                         spawnDist = 0f;
@@ -110,7 +110,7 @@ namespace VoxelShooter
 
                     if (spawnDist > 1f / ((float)EnemyCount + 1) && EnemiesSpawned < EnemyCount)
                     {
-                        Enemy e = EnemyController.Instance.Spawn(EnemyType, (Position - (lineEnd / 2f)) + new Vector3(0, 0, 200f), Props);
+                        Enemy e = EnemyController.Instance.Spawn(EnemyType, (Position - (lineEnd / 2f)) + new Vector3(0, 0, 200f + EnemiesSpawned), Props);
                         e.Scale = 0f;
                         Members.Add(e);
                         spawnDist = 0f;
@@ -136,7 +136,9 @@ namespace VoxelShooter
                             e.Position = new Vector3(Helper.PointOnCircle(ref cp, radius, enemyDist - ((float)count * ((float)MathHelper.TwoPi/(float)EnemyCount))), e.Position.Z);
                             break;
                         case WaveType.Line:
-                            e.Position = (Position - (lineEnd / 2f)) + ((lineEnd/(float)(EnemyCount-1)) * (float)count);
+                            e.Position = EnemyCount > 1
+                                ? (Position - (lineEnd / 2f)) + ((lineEnd / (float)(EnemyCount - 1)) * (float)count)
+                                : Position;
                             break;
                     }
                 }

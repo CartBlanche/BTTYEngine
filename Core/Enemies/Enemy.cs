@@ -79,6 +79,7 @@ namespace VoxelShooter
         public void SyncPhysicsToPosition()
         {
             if (!_physicsInitialized) return;
+            if (float.IsNaN(Position.X) || float.IsNaN(Position.Y) || float.IsNaN(Position.Z)) return;
             var body = PhysicsManager.Instance.Simulation.Bodies.GetBodyReference(_physicsBody);
             body.Pose.Position = new System.Numerics.Vector3(Position.X, Position.Y, Position.Z);
             body.Awake = true;
