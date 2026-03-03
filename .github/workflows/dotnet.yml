@@ -1,0 +1,108 @@
+name: .NET
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'main'
+  pull_request:
+    branches:
+      - 'main'
+  schedule:
+    - cron: "0 3 * * 1"   # Weekly (Mon) build to keep artifacts fresh
+
+jobs:
+  build-desktop:
+    runs-on: macos-latest
+
+    env:
+      MGFXC_WINE_PATH: /Users/runner/.winemonogame
+      DYLD_LIBRARY_PATH: /usr/lib:/usr/local/lib:/opt/homebrew/lib:/usr/local/bin
+
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: 9.0.x
+
+    - name: Setup for MonoGame
+      uses: infinitespace-studios/monogame-actions/install-wine@v1.0
+
+    - name: Install MonoPack
+      run: dotnet tool install --global MonoPack
+
+    - name: Build and Package VoxelShooter
+      run: monopack -p Desktop/VoxelShooter.csproj -o ./artifacts/VoxelShooter -rids win-x64,linux-x64,osx-x64,osx-arm64 -i Desktop/Info.plist -c Desktop/VoxelShooter.icns -v --macos-universal
+
+    - name: Archive VoxelShooter Windows
+      uses: actions/upload-artifact@v6
+      with:
+        name: Desktop-VoxelShooter-Windows
+        path: artifacts/VoxelShooter/*-win-x64.zip
+
+    - name: Archive VoxelShooter Linux
+      uses: actions/upload-artifact@v6
+      with:
+        name: Desktop-VoxelShooter-Linux
+        path: artifacts/VoxelShooter/*-linux-x64.tar.gz
+
+    - name: Archive VoxelShooter macOS
+      uses: actions/upload-artifact@v6
+      with:
+        name: Desktop-VoxelShooter-macOS
+        path: artifacts/VoxelShooter/*-universal.tar.gz
+
+  build-android:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: 9.0.x
+
+    - name: Setup Java JDK
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'microsoft'
+        java-version: '17'
+
+    - name: Install .NET Android workload
+      run: dotnet workload install android
+
+    - name: Build Android Binary for VoxelShooter
+      run: dotnet build Android/VoxelShooter.csproj -c Release
+
+    - name: Archive VoxelShooter Android
+      uses: actions/upload-artifact@v6
+      with:
+        name: Android-VoxelShooter
+        path: Android/bin/Release/net9.0-android/**/*-Signed.apk
+
+  deploy:
+    name: Deploy
+    needs: [ build-desktop, build-android ]
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' }}
+    permissions:
+      packages: write
+      contents: write
+    steps:
+      - name: Clone Repository
+        uses: actions/checkout@v4
+      - name: Expose GitHub Runtime
+        uses: crazy-max/ghaction-github-runtime@v3
+      - name: Make a Release
+        if: github.ref_type == 'tag'
+        uses: ncipollo/release-action@v1
+        with:
+          name: 'VoxelShooter ${{ github.ref_name }}'
+          tag: ${{ github.ref_name }}
+          allowUpdates: true
+          removeArtifacts: true
+          artifacts: "*.zip"
+          token: ${{ secrets.GITHUB_TOKEN }}
