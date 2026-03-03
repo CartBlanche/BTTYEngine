@@ -19,7 +19,7 @@ namespace VoxelShooter
     /// </summary>
     public class IsometricCamera : BaseCamera
     {
-        // ── Isometric angles ──────────────────────────────────────────────────────
+        // Isometric angles
 
         /// <summary>
         /// Horizontal rotation around the scene (radians).
@@ -46,7 +46,7 @@ namespace VoxelShooter
         /// </summary>
         public float FieldOfView = MathHelper.ToRadians(20f);
 
-        // ── Constructor ───────────────────────────────────────────────────────────
+        // Constructor
 
         public IsometricCamera(GraphicsDevice graphicsDevice, Viewport viewport)
             : base(graphicsDevice, viewport)
@@ -63,7 +63,7 @@ namespace VoxelShooter
             RebuildView();
         }
 
-        // ── BaseCamera ────────────────────────────────────────────────────────────
+        // BaseCamera
 
         public override void Update(GameTime gameTime, VoxelWorld world)
         {
@@ -72,7 +72,7 @@ namespace VoxelShooter
             RebuildView();
         }
 
-        // ── Internals ─────────────────────────────────────────────────────────────
+        // Internals
 
         void RebuildView()
         {

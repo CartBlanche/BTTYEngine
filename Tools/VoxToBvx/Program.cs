@@ -38,7 +38,7 @@ string outputPath = args.Length >= 2
     ? args[1]
     : Path.ChangeExtension(inputPath, ".bvx");
 
-// ── 1. Read .vox ──────────────────────────────────────────────────────────────
+// 1. Read .vox
 byte[] voxBytes = File.ReadAllBytes(inputPath);
 
 // Validate magic & version
@@ -49,7 +49,7 @@ int version = BitConverter.ToInt32(voxBytes, 4);
 if (version != 150)
     Console.Error.WriteLine($"Warning: unexpected .vox version {version} (expected 150) — continuing anyway.");
 
-// ── 2. Parse chunks ───────────────────────────────────────────────────────────
+// 2. Parse chunks
 static ChunkInfo ReadChunkHeader(byte[] data, int offset)
 {
     string id          = Encoding.ASCII.GetString(data, offset, 4);
@@ -111,7 +111,7 @@ if (sizeChunks.Count == 0)
 if (xyziChunks.Count != sizeChunks.Count)
     throw new InvalidDataException($"Mismatch: {sizeChunks.Count} SIZE chunk(s) but {xyziChunks.Count} XYZI chunk(s).");
 
-// ── 3. Determine output dimensions ───────────────────────────────────────────
+// 3. Determine output dimensions
 // All frames must share the same canvas in MagicaVoxel multi-model export;
 // use the max extents seen across all SIZE chunks.
 int voxSizeX = 0, voxSizeY = 0, voxSizeZ = 0;
@@ -137,7 +137,7 @@ if (bttyX > 255 || bttyY > 255 || bttyZ > 255)
 
 int frameCount = sizeChunks.Count;
 
-// ── 4. Build the .bvx palette ─────────────────────────────────────────────────
+// 4. Build the .bvx palette
 // MagicaVoxel RGBA chunk: entry 0 = colour for voxel index 1, entry 1 = colour for 2, etc.
 // (palette is rotated by one vs. voxel indices.)
 // Voxel index 0 = air.  For .bvx we keep the same convention: index 0 = air.
@@ -176,7 +176,7 @@ else
     }
 }
 
-// ── 5. Build the voxel grid ───────────────────────────────────────────────────
+// 5. Build the voxel grid
 // Layout: [frame][z][y][x] (all BTTYEngine coords after axis remap)
 int frameStride = bttyZ * bttyY * bttyX;
 var grid = new byte[frameCount * frameStride]; // all zeros = air
@@ -205,7 +205,7 @@ for (int f = 0; f < frameCount; f++)
     }
 }
 
-// ── 6. Write .bvx file ────────────────────────────────────────────────────────
+// 6. Write .bvx file
 using var outFs = File.Create(outputPath);
 using var w     = new BinaryWriter(outFs, Encoding.ASCII);
 

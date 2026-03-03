@@ -1,6 +1,6 @@
 # VoxelShooter
 
-A side-scrolling space shooter where everything, your ship, the enemies, the terrain, is built out of colourful voxels. It started life as an XNA 4.0 project and has since been ported to MonoGame 3.8.5.
+A side-scrolling space shooter where everything, your ship, the enemies, the terrain, is built out of voxels. It started life as an XNA 4.0 project and has since been ported to MonoGame 3.8.*
 
 Android:
 ![VoxelShooter - Android](screenshot-android.png)
@@ -14,7 +14,7 @@ Desktop:
 
 You're a lone fighter pilot flying through a hostile corridor. The level scrolls forward whether you like it or not, enemies pour in from the right in formations, and your only job is to stay alive long enough to make it through.
 
-It's a short, punchy game, the kind you can get through in a single sitting, but getting there without dying is another matter.
+It's a short demo, the kind you can get through in a single sitting, but getting there without dying is another matter.
 
 ---
 
@@ -22,13 +22,13 @@ It's a short, punchy game, the kind you can get through in a single sitting, but
 
 Survive to the end of the level.
 
-Destroy enemies to collect XP orbs they drop. Pick those up to level your weapons up. Don't get hit too many times. The level auto-scrolls, you can't stop it, so you can't turtle in a corner forever.
+Destroy enemies to collect XP orbs. Pick those up to level your weapons up. Don't get hit too many times. The level auto-scrolls horizontally.
 
 ---
 
 ## How to Play
 
-The level scrolls right automatically. Enemies spawn in waves: sometimes in a circle formation that fans out, sometimes in a straight line that sweeps across. Learn the patterns early, later waves come in fast and expect you to already be out of the way.
+Enemies spawn in waves: sometimes in a circle formation that fans out, sometimes in a straight line that sweeps across. Learn the patterns early, later waves come in fast and expect you to already be out of the way.
 
 Your ship collides with the voxel terrain, so keep an eye on where the walls and floors are. Getting pinned against a surface while taking fire is a quick way to lose.
 
@@ -46,7 +46,7 @@ There are five weapon upgrades:
 | 4+ | Two extra side-firing beams added to the spread |
 | 5 | Rockets fire automatically upward every 2 seconds |
 
-At level 2 an orbiting drone activates around your ship. It spins around you continuously and damages any enemy it touches, useful for anything that tries to get in close.
+At level 2 an orbiting drone/hammer activates around your ship. It spins around you continuously and damages any enemy it touches, useful for anything that tries to get in close.
 
 ### The HUD
 
@@ -68,7 +68,7 @@ Two vertical bars on the left side of the screen:
 | `A` / `←` | Move left |
 | `D` / `→` | Move right |
 | `Z` | Fire |
-| `Tab` | Toggle between side-scrolling and isometric camera |
+| `1` / `2` / `3` / `4` | Switch camera (Side-Scrolling / Isometric / First-Person / Top-Down) |
 | `Escape` | Quit |
 
 ### Gamepad
@@ -77,7 +77,7 @@ Two vertical bars on the left side of the screen:
 |-------|--------|
 | Left stick | Move |
 | Right trigger / `A` | Fire |
-| Right stick click (RS / R3) | Toggle between side-scrolling and isometric camera |
+| `LB` / `RB` | Cycle camera backwards / forwards |
 | `Back` | Quit |
 
 ---
@@ -175,23 +175,27 @@ VoxelShooter/
 
 ## BTTYEngine
 
-The engine lives in `BTTYEngine/` and is intentionally game-agnostic. VoxelShooter is its first consumer, but the plan is for future games to reference it directly via `<ProjectReference>` from their own repos.
+The engine lives in `BTTYEngine/` and is intentionally game-agnostic. VoxelShooter is its first demo game to use it, but the plan is for future games to reference it directly via `<ProjectReference>` from their own sibling repos.
 
 What's in there:
 
-- **Camera system** : `ICamera` interface, `BaseCamera`, `SideScrollingCamera`, `IsometricCamera`, and `CameraTransitionManager` for smooth blending between any two cameras
-- **Voxel engine** : `VoxelWorld`, `Chunk`, mesh building, frustum culling, explosion system
+- **Camera system** : `ICamera` interface, `BaseCamera` with built-in screen-shake, and four ready-to-use implementations: `SideScrollingCamera`, `IsometricCamera`, `FirstPersonCamera`, `TopDownCamera`. `CameraTransitionManager` wraps any two cameras and blends between them using a smoothstep curve, so switching camera modes looks polished rather than instant.
+- **Voxel engine** : `VoxelWorld`, `Chunk`, mesh building, frustum culling, and an explosion system for breaking up the voxel terrain
+- **Physics** : BepuPhysics 2.4.0 integration via `PhysicsManager`. Entity-entity collisions are dispatched back to the game loop via `CollisionEventHandler` so gameplay code stays out of Bepu callback threads.
 - **Particles** : pooled `ParticleController` and `ParticleCube` for voxel-style debris
-- **Input** : `InputManager` wrapping keyboard and gamepad
+- **Input** : `InputManager` wrapping keyboard and gamepad with parity across both
 - **Utilities** : `Helper` (random, geometry helpers)
 
-The namespace is still `VoxelShooter` for now : a rename to `BTTYEngine` is planned when the engine moves to its own repo or NuGet package.
+The namespace is still `VoxelShooter`, for now. A rename to `BTTYEngine` is planned when the engine moves to its own repo.
+
+See [`BTTYEngine/README.md`](BTTYEngine/README.md) for a developer guide on using the engine in your own game.
 
 ---
 
 ## Tech Notes
 
-- Voxel geometry is stored in `.vxs` files (custom format, GZip-compressed) and loaded at runtime
+- Voxel geometry is stored in `.bvx` files (our new custom binary format that takes MagicaVoxel files, *.vox, and converts them to *.bvx, which is optimised for GPUs) and loaded at runtime.
+- The content pipeline builds `.tmx` → `.xnb` via the `TiledContentPipeline` extension; `.bvx` files are copied as-is
 - The level layout comes from a [Tiled](https://www.mapeditor.org/) `.tmx` file (`Core/Content/1.tmx`)
 - Enemy spawn positions and wave configurations are defined as object layers inside the same Tiled map
-- The content pipeline builds `.tmx` → `.xnb` via the `TiledContentPipeline` extension; `.vxs` files are copied as-is
+- Coordinate convention: Y-up, right-handed. Camera sits on +Z, looks in −Z.

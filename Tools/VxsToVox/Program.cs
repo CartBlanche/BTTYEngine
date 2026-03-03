@@ -22,7 +22,7 @@ if (args.Length < 2)
 string inputPath  = args[0];
 string outputPath = args[1];
 
-// ── 1. Read & GZip-decompress the .vxs file ──────────────────────────────────
+// 1. Read & GZip-decompress the .vxs file
 byte[] buffer;
 {
     using var raw = File.OpenRead(inputPath);
@@ -41,7 +41,7 @@ byte[] buffer;
     gz.ReadExactly(buffer, 0, msgLength);
 }
 
-// ── 2. Parse .vxs header ──────────────────────────────────────────────────────
+// 2. Parse .vxs header
 int pos = 0;
 int xs         = buffer[pos++]; // width  (btty X)
 int ys         = buffer[pos++]; // height (btty Y, stored Y-down)
@@ -51,7 +51,7 @@ int frameCount = buffer[pos++];
 // Skip 10 × 3-byte swatches (editor colour swatches, unused at runtime)
 pos += 30;
 
-// ── 3. Parse voxel frames ─────────────────────────────────────────────────────
+// 3. Parse voxel frames
 // Each voxel: vx(1) vy(1) vz(1) R(1) G(1) B(1) = 6 bytes
 // A frame ends when the next byte is ASCII 'c' (0x63).
 var frames = new List<List<VoxVoxel>>(frameCount);
@@ -94,7 +94,7 @@ for (int f = 0; f < frameCount; f++)
     frames.Add(voxels);
 }
 
-// ── 4. Build palette (256 entries, index 0 = air) ────────────────────────────
+// 4. Build palette (256 entries, index 0 = air)
 // MagicaVoxel RGBA chunk: 256 × 4 bytes; voxel byte I references RGBA[I-1].
 var colorToIndex  = new Dictionary<(byte R, byte G, byte B), byte>();
 var paletteRgba   = new byte[256 * 4]; // written as-is into the RGBA chunk
@@ -138,7 +138,7 @@ foreach (var frame in frames)
     }
 }
 
-// ── 5. Write .vox file ────────────────────────────────────────────────────────
+// 5. Write .vox file
 // After axis remap the MagicaVoxel grid dimensions are:
 //   vox.X extent = btty.X = xs
 //   vox.Y extent = btty.Z = zs

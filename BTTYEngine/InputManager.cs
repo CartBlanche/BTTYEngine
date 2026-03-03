@@ -11,12 +11,14 @@ namespace VoxelShooter
         public GamePadState PadState;
         public KeyboardState KeyState;
 
+        /// <summary>Captures keyboard and gamepad state into this snapshot.</summary>
         public void Capture()
         {
             PadState = GamePad.GetState(PlayerIndex.One);
             KeyState = Keyboard.GetState();
         }
 
+        /// <summary>Copies state from <paramref name="other"/> into this snapshot.</summary>
         public void CopyFrom(InputState other)
         {
             PadState = other.PadState;
@@ -34,7 +36,9 @@ namespace VoxelShooter
         InputState current = new InputState();
         InputState last    = new InputState();
 
+        /// <summary>Raw input state captured at the start of this frame.</summary>
         public InputState CurrentState => current;
+        /// <summary>Raw input state from the previous frame. Used internally for edge detection.</summary>
         public InputState LastState    => last;
 
         /// <summary>Call at the start of Update to latch this frame's input.</summary>
@@ -49,7 +53,7 @@ namespace VoxelShooter
             last.CopyFrom(current);
         }
 
-        // ── Keyboard helpers ─────────────────────────────────────────────────
+        // Keyboard helpers
 
         /// <summary>Key is held this frame.</summary>
         public bool IsKeyDown(Keys key) => current.KeyState.IsKeyDown(key);
@@ -58,7 +62,7 @@ namespace VoxelShooter
         public bool IsKeyPressed(Keys key) =>
             current.KeyState.IsKeyDown(key) && last.KeyState.IsKeyUp(key);
 
-        // ── Gamepad button helpers ────────────────────────────────────────────
+        // Gamepad button helpers
 
         /// <summary>Button is held this frame.</summary>
         public bool IsButtonDown(Buttons button) =>
@@ -69,7 +73,7 @@ namespace VoxelShooter
             current.PadState.IsButtonDown(button) &&
             last.PadState.IsButtonUp(button);
 
-        // ── Analogue ──────────────────────────────────────────────────────────
+        // Analogue 
 
         /// <summary>Left thumbstick position (zero if no gamepad connected).</summary>
         public Vector2 LeftStick => current.PadState.ThumbSticks.Left;
@@ -77,7 +81,7 @@ namespace VoxelShooter
         /// <summary>Right trigger value 0–1.</summary>
         public float RightTrigger => current.PadState.Triggers.Right;
 
-        // ── Game-level queries ────────────────────────────────────────────────
+        // Game-level queries
 
         /// <summary>
         /// Movement direction combining keyboard (WASD / arrow keys) and gamepad
@@ -125,7 +129,7 @@ namespace VoxelShooter
             current.KeyState.IsKeyDown(Keys.Escape) ||
             current.PadState.Buttons.Back == ButtonState.Pressed;
 
-        // ── Camera selection (keyboard 1-4, gamepad shoulder buttons) ────────────
+        // Camera selection (keyboard 1-4, gamepad shoulder buttons)
 
         /// <summary>Direct select: keyboard 1–4 selects the corresponding camera.</summary>
         public bool IsCameraSelectPressed(int cameraIndex)

@@ -15,7 +15,7 @@ namespace VoxelShooter
     /// </summary>
     public class SideScrollingCamera : BaseCamera
     {
-        // ── Camera orientation ────────────────────────────────────────────────────
+        // Camera orientation
 
         public float Yaw   = MathHelper.Pi;
         public float Roll  = MathHelper.Pi;
@@ -27,14 +27,14 @@ namespace VoxelShooter
         /// </summary>
         public Vector3 Offset = new Vector3(0f, 0f, 95f);
 
-        // ── Tuning constants ──────────────────────────────────────────────────────
+        // Tuning constants
 
         /// <summary>
         /// How quickly Position lerps toward Target each frame (0 = frozen, 1 = instant).
         /// </summary>
         public float MoveSpeed = 0.05f;
 
-        // ── Constructor ───────────────────────────────────────────────────────────
+        // Constructor
 
         public SideScrollingCamera(GraphicsDevice graphicsDevice, Viewport viewport)
             : base(graphicsDevice, viewport)
@@ -56,7 +56,7 @@ namespace VoxelShooter
             BoundingFrustum = new BoundingFrustum(ViewMatrix * ProjectionMatrix);
         }
 
-        // ── ICamera / BaseCamera ──────────────────────────────────────────────────
+        // ICamera / BaseCamera
 
         public override void Update(GameTime gameTime, VoxelWorld world)
         {

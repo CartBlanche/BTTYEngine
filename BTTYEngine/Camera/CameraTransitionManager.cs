@@ -20,7 +20,7 @@ namespace VoxelShooter
     /// </summary>
     public class CameraTransitionManager : ICamera
     {
-        // ── ICamera ───────────────────────────────────────────────────────────────
+        // ICamera
 
         public Matrix WorldMatrix      { get; private set; }
         public Matrix ViewMatrix       { get; private set; }
@@ -39,7 +39,7 @@ namespace VoxelShooter
             set { from.Target = value; to.Target = value; active.Target = value; }
         }
 
-        // ── State ─────────────────────────────────────────────────────────────────
+        // State
 
         /// <summary>The camera currently in full control (not blending).</summary>
         public ICamera ActiveCamera => active;
@@ -54,8 +54,9 @@ namespace VoxelShooter
         float blendT     = 1f;
         float blendSpeed = 0f;  // 1 / (durationSeconds * 60)
 
-        // ── Constructor ───────────────────────────────────────────────────────────
+        // Constructor
 
+        /// <summary>Creates a manager with <paramref name="initialCamera"/> as the active camera. No transition plays immediately.</summary>
         public CameraTransitionManager(ICamera initialCamera)
         {
             from   = initialCamera;
@@ -66,7 +67,7 @@ namespace VoxelShooter
             SyncFromActive();
         }
 
-        // ── Public API ────────────────────────────────────────────────────────────
+        // Public API
 
         /// <summary>
         /// Trigger a screen-shake on all active cameras.  Passes to both <c>from</c>
@@ -95,8 +96,12 @@ namespace VoxelShooter
             blendSpeed = 1f / (durationSeconds * 60f);
         }
 
-        // ── ICamera ───────────────────────────────────────────────────────────────
+        // ICamera
 
+        /// <summary>
+        /// Updates both cameras and blends their matrices while a transition is active.
+        /// Call once per frame in place of a direct camera update.
+        /// </summary>
         public void Update(GameTime gameTime, VoxelWorld world)
         {
             from.Update(gameTime, world);
@@ -124,7 +129,7 @@ namespace VoxelShooter
             }
         }
 
-        // ── Helpers ───────────────────────────────────────────────────────────────
+        // Helpers
 
         void SyncFromActive()
         {

@@ -20,7 +20,7 @@ namespace VoxelShooter
     ///   [20-21] PivotZ     uint16
     ///   [22-23] FrameRate  uint16  (fps; 0 = no animation)
     ///   [24-26] Reserved   (ignored on read)
-    ///   [27]    PaletteSize byte   (0 means 256 for v1 — see note below)
+    ///   [27]    PaletteSize byte   (0 means 256 for v1. See note below)
     ///   [28-1051] Palette  256 × RGBA (4 bytes each)
     ///   [1052+] Voxel data [frame][z][y][x], 1 byte per voxel (palette index)
     ///
@@ -47,7 +47,7 @@ namespace VoxelShooter
                 data = ms.ToArray();
             }
 
-            // ── Validate magic & version ──────────────────────────────────────
+            // Validate magic & version
             if (data.Length < HeaderSize)
                 throw new InvalidDataException($"\"{fn}\" is too small to be a valid .bvx file.");
 
@@ -58,7 +58,7 @@ namespace VoxelShooter
             if (version != 1)
                 throw new InvalidDataException($"\"{fn}\" has unsupported .bvx version {version} (only v1 is supported).");
 
-            // ── Read header fields ────────────────────────────────────────────
+            // Read header fields
             int sizeX      = BitConverter.ToUInt16(data, 8);
             int sizeY      = BitConverter.ToUInt16(data, 10);
             int sizeZ      = BitConverter.ToUInt16(data, 12);
@@ -73,22 +73,22 @@ namespace VoxelShooter
                 throw new InvalidDataException(
                     $"\"{fn}\" is truncated: expected {expectedDataSize} bytes, got {data.Length}.");
 
-            // ── Build Color palette ───────────────────────────────────────────
+            // Build Color palette
             var palette = new Color[paletteSize];
             for (int i = 0; i < paletteSize; i++)
             {
                 int slot  = PaletteOffset + i * 4;
                 palette[i] = new Color(data[slot], data[slot + 1], data[slot + 2], data[slot + 3]);
             }
-            // palette[0] is air — its colour doesn't matter, but it's available.
+            // palette[0] is air. Its colour doesn't matter, but it's available.
 
-            // ── Initialise VoxelSprite ────────────────────────────────────────
+            // Initialise VoxelSprite and AnimChunks
             sprite = new VoxelSprite(sizeX, sizeY, sizeZ);
             sprite.AnimChunks.Clear();
             sprite.ChunkRTs.Clear();
             sprite.FrameRate = frameRate;
 
-            // ── Read voxel data — layout [frame][z][y][x] ────────────────────
+            // Read voxel data — layout [frame][z][y][x]
             int frameStride = sizeZ * sizeY * sizeX;
 
             for (int f = 0; f < frameCount; f++)

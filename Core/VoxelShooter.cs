@@ -188,7 +188,7 @@ namespace VoxelShooter
 
             if (!IsActive) return;
 
-            // ── Camera selection: keys 1-4, RB=next, LB=prev ──────────────────
+            // Camera selection: keys 1-4, RB=next, LB=prev
             {
                 int requested = 0;
                 for (int i = 1; i <= 4; i++)
@@ -206,7 +206,6 @@ namespace VoxelShooter
                     cameraManager.TransitionTo(_cameras[_activeCameraIndex], 1.5f);
                 }
             }
-            // ─────────────────────────────────────────────────────────────────────
 
             if (Helper.Random.Next(10) == 1)
             {

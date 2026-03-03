@@ -10,7 +10,7 @@ namespace VoxelShooter
     /// </summary>
     public abstract class BaseCamera : ICamera
     {
-        // ── ICamera ─────────────────────────────────────────────────────────────
+        // ICamera
 
         public Matrix WorldMatrix      { get; protected set; }
         public Matrix ViewMatrix       { get; protected set; }
@@ -20,7 +20,7 @@ namespace VoxelShooter
         public Vector3 Position { get; set; }
         public Vector3 Target   { get; set; }
 
-        // ── Screen-shake ─────────────────────────────────────────────────────────
+        // Screen-shake
 
         static readonly System.Random _shakeRng = new System.Random();
 
@@ -59,12 +59,12 @@ namespace VoxelShooter
             }
         }
 
-        // ── Engine internals ─────────────────────────────────────────────────────
+        // Engine internals
 
         protected GraphicsDevice GraphicsDevice { get; }
         protected Viewport       Viewport       { get; }
 
-        // ── Constructor ──────────────────────────────────────────────────────────
+        // Constructor
 
         protected BaseCamera(GraphicsDevice graphicsDevice, Viewport viewport)
         {
@@ -78,7 +78,7 @@ namespace VoxelShooter
             BoundingFrustum  = new BoundingFrustum(Matrix.Identity);
         }
 
-        // ── Abstract contract ────────────────────────────────────────────────────
+        // Abstract contract
 
         /// <summary>
         /// Update view matrices, frustum, and any camera-specific interpolation.
