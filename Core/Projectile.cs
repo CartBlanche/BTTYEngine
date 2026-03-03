@@ -36,9 +36,6 @@ namespace VoxelShooter
 
         public bool Deflected = false;
 
-        float rotX;
-        float rotY;
-
         Enemy target;
 
         public Projectile()
@@ -58,7 +55,6 @@ namespace VoxelShooter
 
             if (Owner is Hero && Position.X > scrollPos + 75f) Active = false;
 
-            Color c;
             switch (Type)
             {
                 case ProjectileType.Rocket:

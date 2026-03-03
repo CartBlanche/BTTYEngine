@@ -29,9 +29,6 @@ namespace VoxelShooter
         float spawnDist = 0f;
         float enemyDist = 0f;
 
-        float dir = 1f;
-
-        float bob = 0f;
         float bobPhase = 0f;
         float spawnY;   // anchor so bob is relative, not cumulative
 

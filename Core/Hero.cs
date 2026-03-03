@@ -329,7 +329,6 @@ namespace VoxelShooter
 
         void CheckCollisions(VoxelWorld world, ICamera gameCamera)
         {
-            float checkRadius = 3.5f;
             float radiusSweep = 0.1f;
             Vector2 v2Pos = new Vector2(Position.X, Position.Y);
             float checkHeight = Position.Z - 1f;

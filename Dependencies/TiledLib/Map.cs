@@ -476,9 +476,6 @@ namespace TiledLib
                 return null;
                 
             return Rectangle.Intersect(rect, new Rectangle((int)tilePosition.X * TileWidth, (int)tilePosition.Y * TileHeight, TileWidth, TileHeight));
-            
-
-            return null;
         }
 
         public Tile GetTile(Vector2 position, int layer)

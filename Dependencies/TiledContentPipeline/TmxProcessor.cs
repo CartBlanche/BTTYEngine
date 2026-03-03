@@ -34,17 +34,18 @@ namespace TiledContentPipeline
 
 
 				// build the asset as an external reference
-				OpaqueDataDictionary data = new OpaqueDataDictionary();
-				data.Add("GenerateMipmaps", false);
-				data.Add("ResizeToPowerOfTwo", false);
-				data.Add("TextureFormat", TextureProcessorOutputFormat.Color);
-				data.Add("ColorKeyEnabled", tileSet.ColorKey.HasValue);
-				data.Add("ColorKeyColor", tileSet.ColorKey.HasValue ? tileSet.ColorKey.Value : Microsoft.Xna.Framework.Color.Magenta);
+				var textureProcessor = new TextureProcessor
+				{
+					GenerateMipmaps = false,
+					ResizeToPowerOfTwo = false,
+					TextureFormat = TextureProcessorOutputFormat.Color,
+					ColorKeyEnabled = tileSet.ColorKey.HasValue,
+					ColorKeyColor = tileSet.ColorKey.HasValue ? tileSet.ColorKey.Value : Microsoft.Xna.Framework.Color.Magenta,
+				};
 				tileSet.Texture = context.BuildAsset<TextureContent, TextureContent>(
 					new ExternalReference<TextureContent>(path),
-					"TextureProcessor",
-					data,
-					"TextureImporter",
+					new TextureImporter(),
+					textureProcessor,
 					asset);
 
                 string whitefn = Path.GetFileNameWithoutExtension(tileSet.Image);

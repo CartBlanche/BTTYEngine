@@ -25,8 +25,6 @@ namespace VoxelShooter
         public bool Visible = false;
         public bool Updated = false;
 
-        VertexBuffer vb;
-
         // Per-chunk scratch lists for mesh building � avoids the shared-state bug
         // that arose from using parentWorld.Vertices / parentWorld.Indexes.
         readonly List<VertexPositionNormalColor> vertices = new List<VertexPositionNormalColor>();
