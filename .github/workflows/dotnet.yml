@@ -34,10 +34,10 @@ jobs:
       run: dotnet tool install --global MonoPack
 
     - name: Build TiledLib
-      run: dotnet build Dependencies\TiledLib\TiledLib.csproj --configuration Release
+      run: dotnet build Dependencies/TiledLib/TiledLib.csproj --configuration Release
 
     - name: Build TiledContentPipeline
-      run: dotnet build Dependencies\TiledContentPipeline\TiledContentPipeline.csproj --configuration Release
+      run: dotnet build Dependencies/TiledContentPipeline/TiledContentPipeline.csproj --configuration Release
 
     - name: Build and Package VoxelShooter
       run: monopack -p Desktop/VoxelShooter.csproj -o ./artifacts/VoxelShooter -rids win-x64,linux-x64,osx-x64,osx-arm64 -i Desktop/Info.plist -c Desktop/VoxelShooter.icns -v --macos-universal
@@ -81,10 +81,10 @@ jobs:
       run: dotnet workload install android
 
     - name: Build TiledLib
-      run: dotnet build Dependencies\TiledLib\TiledLib.csproj --configuration Release
+      run: dotnet build Dependencies/TiledLib/TiledLib.csproj --configuration Release
 
     - name: Build TiledContentPipeline
-      run: dotnet build Dependencies\TiledContentPipeline\TiledContentPipeline.csproj --configuration Release
+      run: dotnet build Dependencies/TiledContentPipeline/TiledContentPipeline.csproj --configuration Release
 
     - name: Build Android Binary for VoxelShooter
       run: dotnet build Android/VoxelShooter.csproj -c Release
