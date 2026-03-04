@@ -58,7 +58,7 @@ namespace VoxelShooter
 
         PhysicsManager physicsManager;
 
-        InputManager inputManager = new InputManager();
+        InputManager<VoxelAction> inputManager = new InputManager<VoxelAction>();
 
         SpriteFont font;
 
@@ -165,6 +165,27 @@ namespace VoxelShooter
                 Projection = cameraManager.ProjectionMatrix,
                 VertexColorEnabled = true,
             };
+
+            // Input bindings
+            inputManager.Bind(VoxelAction.MoveUp,     Keys.W, Keys.Up);
+            inputManager.Bind(VoxelAction.MoveDown,   Keys.S, Keys.Down);
+            inputManager.Bind(VoxelAction.MoveLeft,   Keys.A, Keys.Left);
+            inputManager.Bind(VoxelAction.MoveRight,  Keys.D, Keys.Right);
+            inputManager.Bind(VoxelAction.Fire,       Keys.Space);
+            inputManager.Bind(VoxelAction.Fire,       Buttons.A);
+            inputManager.Bind(VoxelAction.Quit,       Keys.Escape);
+            inputManager.Bind(VoxelAction.Quit,       Buttons.Back);
+            inputManager.Bind(VoxelAction.CameraNext, Buttons.RightShoulder);
+            inputManager.Bind(VoxelAction.CameraPrev, Buttons.LeftShoulder);
+            inputManager.Bind(VoxelAction.Camera1,    Keys.D1);
+            inputManager.Bind(VoxelAction.Camera2,    Keys.D2);
+            inputManager.Bind(VoxelAction.Camera3,    Keys.D3);
+            inputManager.Bind(VoxelAction.Camera4,    Keys.D4);
+            inputManager.BindAxis(VoxelAction.Fire,   GamePadAxis.RightTrigger, 1f, 0.1f);
+            inputManager.BindAxis(VoxelAction.MoveRight, GamePadAxis.LeftStickX,  1f);
+            inputManager.BindAxis(VoxelAction.MoveLeft,  GamePadAxis.LeftStickX, -1f);
+            inputManager.BindAxis(VoxelAction.MoveUp,    GamePadAxis.LeftStickY,  1f);
+            inputManager.BindAxis(VoxelAction.MoveDown,  GamePadAxis.LeftStickY, -1f);
         }
 
         /// <summary>
@@ -185,7 +206,7 @@ namespace VoxelShooter
         {
             inputManager.BeginInputProcessing();
 
-            if (inputManager.IsExiting())
+            if (inputManager.IsHeld(VoxelAction.Quit))
                 this.Exit();
 
             if (!IsActive) return;
@@ -193,13 +214,15 @@ namespace VoxelShooter
             // Camera selection: keys 1-4, RB=next, LB=prev
             {
                 int requested = 0;
-                for (int i = 1; i <= 4; i++)
-                    if (inputManager.IsCameraSelectPressed(i)) { requested = i; break; }
+                if      (inputManager.IsPressed(VoxelAction.Camera1)) requested = 1;
+                else if (inputManager.IsPressed(VoxelAction.Camera2)) requested = 2;
+                else if (inputManager.IsPressed(VoxelAction.Camera3)) requested = 3;
+                else if (inputManager.IsPressed(VoxelAction.Camera4)) requested = 4;
 
-                if (requested == 0 && inputManager.IsCameraNextPressed())
+                if (requested == 0 && inputManager.IsPressed(VoxelAction.CameraNext))
                     requested = (_activeCameraIndex % 4) + 1;   // 1→2→3→4→1
 
-                if (requested == 0 && inputManager.IsCameraPrevPressed())
+                if (requested == 0 && inputManager.IsPressed(VoxelAction.CameraPrev))
                     requested = ((_activeCameraIndex - 2 + 4) % 4) + 1;  // 1→4→3→2→1
 
                 if (requested != 0 && requested != _activeCameraIndex)
@@ -232,9 +255,9 @@ namespace VoxelShooter
             }
             else if(scrollSpeed>0f) scrollSpeed -= 0.01f;
 
-            gameHero.Move(inputManager.MoveDirection());
+            gameHero.Move(inputManager.GetAxis2D(VoxelAction.MoveLeft, VoxelAction.MoveRight, VoxelAction.MoveDown, VoxelAction.MoveUp));
 
-            if (inputManager.IsFiring()) gameHero.Fire();
+            if (inputManager.IsHeld(VoxelAction.Fire)) gameHero.Fire();
 
             inputManager.EndInputProcessing();
 
@@ -340,7 +363,7 @@ namespace VoxelShooter
                 Color.White * 0.85f);
 
             // Controls strip, bottom-right, small and subtle
-            string controls = "WASD Move   Z/RT Fire   1-4 Camera   LB/RB Cycle   Esc Quit";
+            string controls = "WASD/LTS  Move   SPC/RT  Fire   1-4  Camera   LB/RB  Cycle   Esc  Quit";
             Vector2 ctrlSize = font.MeasureString(controls);
             spriteBatch.DrawString(font, controls,
                 new Vector2(GraphicsDevice.Viewport.Width - ctrlSize.X * 0.6f - 16f,
