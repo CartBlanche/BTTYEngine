@@ -4,22 +4,22 @@
         {
             "label": "Debug Android Build",
             "type": "shell",
-            "command": "dotnet build -p:Configuration=Debug ${workspaceFolder}/Android/VoxelShooter.csproj \"/t:Install;_Run\" /p:AndroidAttachDebugger=true /p:AndroidSdbHostPort=10000"
+            "command": "dotnet build -p:Configuration=Debug ${workspaceFolder}/VoxelShooter/Android/VoxelShooter.csproj \"/t:Install;_Run\" /p:AndroidAttachDebugger=true /p:AndroidSdbHostPort=10000"
         },
         {
             "label": "Debug Desktop Build",
             "type": "shell",
-            "command": "dotnet build -p:Configuration=Debug ${workspaceFolder}/Desktop/VoxelShooter.csproj"
+            "command": "dotnet build -p:Configuration=Debug ${workspaceFolder}/VoxelShooter/Desktop/VoxelShooter.csproj"
         },
         {
             "label": "Debug iOS Build",
             "type": "shell",
-            "command": "dotnet build -p:Configuration=Debug ${workspaceFolder}/iOS/VoxelShooter.csproj"
+            "command": "dotnet build -p:Configuration=Debug ${workspaceFolder}/VoxelShooter/iOS/VoxelShooter.csproj"
         },
         {
             "label": "Debug Windows Build",
             "type": "shell",
-            "command": "dotnet build -p:Configuration=Debug ${workspaceFolder}/Windows/VoxelShooter.csproj"
+            "command": "dotnet build -p:Configuration=Debug ${workspaceFolder}/VoxelShooter/Windows/VoxelShooter.csproj"
         }
     ]
 }

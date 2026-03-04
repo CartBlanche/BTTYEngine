@@ -1,0 +1,114 @@
+
+#----------------------------- Global Properties ----------------------------#
+
+/outputDir:bin/$(Platform)
+/intermediateDir:obj/$(Platform)
+/platform:DesktopGL
+/config:$(Configuration)
+/profile:Reach
+/compress:False
+
+#-------------------------------- References --------------------------------#
+
+# TiledLib is needed so MGCB can resolve the runtime types referenced in TiledContentPipeline
+/reference:..\..\..\Dependencies\TiledLib\bin\Release\net8.0\TiledLib.dll
+
+# Custom content pipeline extension for Tiled .tmx map files
+/reference:..\..\..\Dependencies\TiledContentPipeline\bin\Release\net8.0\TiledContentPipeline.dll
+
+#---------------------------------- Content ---------------------------------#
+
+#begin glow.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:glow.png
+
+#begin hud.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:hud.png
+
+#begin font.spritefont
+# Note: "Press Start 2P" must be installed for the original look.
+# font.spritefont falls back to Arial. Replace FontName with "Press Start"
+# after installing https://fonts.google.com/specimen/Press+Start+2P
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/build:font.spritefont
+
+#begin 1.tmx
+/importer:TmxImporter
+/processor:TmxProcessor
+/build:1.tmx
+
+#begin ship.bvx
+/copy:ship.bvx
+
+#begin tiles.bvx
+/copy:tiles.bvx
+
+#begin projectiles.bvx
+/copy:projectiles.bvx
+
+#begin enemies\omega.bvx
+/copy:enemies\omega.bvx
+
+#begin enemies\asteroids.bvx
+/copy:enemies\asteroids.bvx
+
+
+#begin enemies\turret.bvx
+/copy:enemies\turret.bvx
+
+#begin enemies\squid.bvx
+/copy:enemies\squid.bvx
+
+# Audio assets: uncomment each block when the file is present in Content/
+
+# [SFX-LASER] Hero laser fire
+# #begin Sound\laser.wav
+# /importer:WavImporter
+# /processor:SoundEffectProcessor
+# /processorParam:Quality=Best
+# /build:Sound\laser.wav
+
+# [SFX-EXPLODE] Enemy explosion
+# #begin Sound\explosion.wav
+# /importer:WavImporter
+# /processor:SoundEffectProcessor
+# /processorParam:Quality=Best
+# /build:Sound\explosion.wav
+
+# [SFX-HIT] Hero ship hit
+# #begin Sound\hit.wav
+# /importer:WavImporter
+# /processor:SoundEffectProcessor
+# /processorParam:Quality=Best
+# /build:Sound\hit.wav
+
+# [SFX-POWERUP] Power-up collected / level-up
+# #begin Sound\powerup.wav
+# /importer:WavImporter
+# /processor:SoundEffectProcessor
+# /processorParam:Quality=Best
+# /build:Sound\powerup.wav
+
+# [MUS-BGM] Background music loop (OGG recommended for DesktopGL)
+# #begin Music\bgm.ogg
+# /importer:OggImporter
+# /processor:SongProcessor
+# /build:Music\bgm.ogg

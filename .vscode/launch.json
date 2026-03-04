@@ -14,21 +14,21 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "Debug Desktop Build",
-            "program": "${workspaceFolder}/Desktop/bin/Debug/net9.0/VoxelShooter"
+            "program": "${workspaceFolder}/VoxelShooter/Desktop/bin/Debug/net9.0/VoxelShooter"
         },
         {
             "name": "iOS Debug",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "Debug iOS Build",
-            "program": "${workspaceFolder}/iOS/bin/Debug/net9.0-ios/VoxelShooter.dll"
+            "program": "${workspaceFolder}/VoxelShooter/iOS/bin/Debug/net9.0-ios/VoxelShooter.dll"
         },
         {
             "name": "Windows Debug",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "Debug Windows Build",
-            "program": "${workspaceFolder}/Windows/bin/Debug/net9.0-windows/VoxelShooter.exe"
+            "program": "${workspaceFolder}/VoxelShooter/Windows/bin/Debug/net9.0-windows/VoxelShooter.exe"
         }
     ]
 }
