@@ -38,24 +38,24 @@ namespace VoxelShooter
         double fireCooldown = 0;
         double rocketCooldown = 0;
         public float hitAlpha = 0f;
-        double _hitImmunityMs = 0;
-        Vector3 _knockback;
+        double hitImmunityMs = 0;
+        Vector3 knockback;
 
         int powerupLevel = 0;
 
         bool orbActive;
         float orbAngle = -MathHelper.PiOver2;
 
-        // [SFX-LASER]   SoundEffect _sfxLaser;
-        // [SFX-HIT]     SoundEffect _sfxHit;
-        // [SFX-POWERUP] SoundEffect _sfxPowerup;
+        // [SFX-LASER]   SoundEffect sfxLaser;
+        // [SFX-HIT]     SoundEffect sfxHit;
+        // [SFX-POWERUP] SoundEffect sfxPowerup;
         Vector3 orbPosition;
         Vector3 orbRotation;
 
         public float[] xpLevels = new float[] { 6f, 18f, 40f, 68f, 100f };
         //public float[] xpLevels = new float[] { 1f, 3f, 5f, 8f, 10f };
 
-        BodyHandle _physicsBody;
+        BodyHandle physicsBody;
 
         public Hero()
         {
@@ -75,9 +75,9 @@ namespace VoxelShooter
             collisionBoxSize = new Vector3(10, 4f, 2f);
             CollisionBox = new BoundingBox();
 
-            // [SFX-LASER]   _sfxLaser   = content.Load<SoundEffect>("Sound/laser");
-            // [SFX-HIT]     _sfxHit     = content.Load<SoundEffect>("Sound/hit");
-            // [SFX-POWERUP] _sfxPowerup = content.Load<SoundEffect>("Sound/powerup");
+            // [SFX-LASER]   sfxLaser   = content.Load<SoundEffect>("Sound/laser");
+            // [SFX-HIT]     sfxHit     = content.Load<SoundEffect>("Sound/hit");
+            // [SFX-POWERUP] sfxPowerup = content.Load<SoundEffect>("Sound/powerup");
         }
 
         public void InitPhysics(PhysicsManager physics)
@@ -86,20 +86,20 @@ namespace VoxelShooter
             var inertia = sphere.ComputeInertia(1f);
             inertia.InverseInertiaTensor = default; // zero = locked rotation (no tumbling)
             var shapeIndex = physics.Simulation.Shapes.Add(sphere);
-            _physicsBody = physics.Simulation.Bodies.Add(
+            physicsBody = physics.Simulation.Bodies.Add(
                 BodyDescription.CreateDynamic(
                     new RigidPose(new System.Numerics.Vector3(Position.X, Position.Y, Position.Z)),
                     new BodyVelocity(),
                     inertia,
                     new CollidableDescription(shapeIndex, 0.1f),
                     new BodyActivityDescription(0.01f)));
-            EntityRegistry.Instance.Register(_physicsBody, this);
+            EntityRegistry.Instance.Register(physicsBody, this);
         }
 
         public void DestroyPhysics(PhysicsManager physics)
         {
-            EntityRegistry.Instance.Unregister(_physicsBody);
-            physics.Simulation.Bodies.Remove(_physicsBody);
+            EntityRegistry.Instance.Unregister(physicsBody);
+            physics.Simulation.Bodies.Remove(physicsBody);
         }
 
         // Damage is applied by the enemy's OnCollision calling hero.DoHit.
@@ -108,15 +108,15 @@ namespace VoxelShooter
         public void Update(GameTime gameTime, ICamera gameCamera, VoxelWorld gameWorld, float scrollSpeed)
         {
             // Read authoritative position from Bepu (already stepped this frame in VoxelShooter.Update).
-            var body = PhysicsManager.Instance.Simulation.Bodies.GetBodyReference(_physicsBody);
+            var body = PhysicsManager.Instance.Simulation.Bodies.GetBodyReference(physicsBody);
             var bpos = body.Pose.Position;
             Position = new Microsoft.Xna.Framework.Vector3(bpos.X, bpos.Y, bpos.Z);
 
             Vector2 v2Pos= new Vector2(Position.X,Position.Y);
 
-            tempSpeed = Speed + _knockback;
+            tempSpeed = Speed + knockback;
             tempSpeed.X += scrollSpeed;
-            _knockback *= 0.82f; // decay knockback each frame (~10 frames to reach 10%)
+            knockback *= 0.82f; // decay knockback each frame (~10 frames to reach 10%)
 
             CollisionBox.Min = Position - (collisionBoxSize/2);
             CollisionBox.Max = Position + (collisionBoxSize/2);
@@ -142,7 +142,7 @@ namespace VoxelShooter
 
             fireCooldown -= gameTime.ElapsedGameTime.TotalMilliseconds;
             rocketCooldown -= gameTime.ElapsedGameTime.TotalMilliseconds;
-            _hitImmunityMs -= gameTime.ElapsedGameTime.TotalMilliseconds;
+            hitImmunityMs -= gameTime.ElapsedGameTime.TotalMilliseconds;
 
             if (hitAlpha > 0f) hitAlpha -= 0.1f;
 
@@ -174,10 +174,10 @@ namespace VoxelShooter
 
         public void DoHit(Vector3 pos, Projectile proj)
         {
-            if (_hitImmunityMs > 0) return;
+            if (hitImmunityMs > 0) return;
             hitAlpha = 1f;
-            _hitImmunityMs = 500;
-            // [SFX-HIT] _sfxHit.Play(0.8f, 0f, 0f);
+            hitImmunityMs = 500;
+            // [SFX-HIT] sfxHit.Play(0.8f, 0f, 0f);
 
             if (proj != null) // A null projectile means an enemy collided with the player
                 Health -= proj.Damage/2f;
@@ -188,15 +188,15 @@ namespace VoxelShooter
         // Damage overload used by velocity-scaled impacts (e.g. asteroids).
         public void DoHit(Vector3 pos, float damage)
         {
-            if (_hitImmunityMs > 0) return;
+            if (hitImmunityMs > 0) return;
             hitAlpha = 1f;
-            _hitImmunityMs = 500;
-            // [SFX-HIT] _sfxHit.Play(0.8f, 0f, 0f);
+            hitImmunityMs = 500;
+            // [SFX-HIT] sfxHit.Play(0.8f, 0f, 0f);
             Health -= damage;
         }
 
         // Push the ship in the given direction for a few frames (decays at 18%/frame).
-        public void ApplyKnockback(Vector3 impulse) => _knockback += impulse;
+        public void ApplyKnockback(Vector3 impulse) => knockback += impulse;
 
         public void Draw(GraphicsDevice gd)
         {
@@ -253,7 +253,7 @@ namespace VoxelShooter
                     {
                         fireCooldown = 300;
                         ProjectileController.Instance.Spawn(ProjectileType.Laser1, this, Position+ new Vector3(3f,0f,0f), Matrix.Identity, new Vector3(2f, 0f, 0f), 2f, 2000, false);
-                        // [SFX-LASER] _sfxLaser.Play(0.4f, 0f, 0f);
+                        // [SFX-LASER] sfxLaser.Play(0.4f, 0f, 0f);
                     }
                     break;
                 case 1:
@@ -263,7 +263,7 @@ namespace VoxelShooter
                         fireCooldown = 200;
                         ProjectileController.Instance.Spawn(ProjectileType.Laser2, this, Position + new Vector3(3f, -1f + (2f*fireswitch),0f), Matrix.Identity, new Vector3(2f, 0f, 0f), 3f, 2000, false);
                         fireswitch = 1 - fireswitch;
-                        // [SFX-LASER] _sfxLaser.Play(0.4f, 0.1f, 0f);
+                        // [SFX-LASER] sfxLaser.Play(0.4f, 0.1f, 0f);
                     }
                     break;
                 case 3:
@@ -296,7 +296,7 @@ namespace VoxelShooter
                         }
 
                         fireswitch = 1 - fireswitch;
-                        // [SFX-LASER] _sfxLaser.Play(0.4f, 0.2f, 0f);
+                        // [SFX-LASER] sfxLaser.Play(0.4f, 0.2f, 0f);
                     }
                     break;
             }
@@ -326,7 +326,7 @@ namespace VoxelShooter
         {
             powerupLevel++;
             if (powerupLevel >= 2) orbActive = true;
-            // [SFX-POWERUP] _sfxPowerup.Play(1f, 0f, 0f);
+            // [SFX-POWERUP] sfxPowerup.Play(1f, 0f, 0f);
         }
 
         void CheckCollisions(VoxelWorld world, ICamera gameCamera)

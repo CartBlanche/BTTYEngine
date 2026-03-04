@@ -31,11 +31,11 @@ namespace VoxelShooter
         TopDownCamera        tdCamera;
         CameraTransitionManager cameraManager;
 
-        int      _activeCameraIndex = 1;   // 1=side, 2=iso, 3=fp, 4=topdown
-        ICamera[] _cameras;                // populated in LoadContent (index 0 unused)
+        int      activeCameraIndex = 1;   // 1=side, 2=iso, 3=fp, 4=topdown
+        ICamera[] cameras;                // populated in LoadContent (index 0 unused)
 
-        static readonly string[] _cameraNames = { "", "Side-Scrolling", "Isometric", "First Person", "Top-Down" };
-        double _fps;
+        static readonly string[] cameraNames = { "", "Side-Scrolling", "Isometric", "First Person", "Top-Down" };
+        double fps;
 
         BasicEffect drawEffect;
 
@@ -62,7 +62,7 @@ namespace VoxelShooter
 
         SpriteFont font;
 
-        // [MUS-BGM] Microsoft.Xna.Framework.Media.Song _bgm;
+        // [MUS-BGM] Microsoft.Xna.Framework.Media.Song bgm;
 
         Texture2D hudTex;
 
@@ -99,10 +99,10 @@ namespace VoxelShooter
             font = Content.Load<SpriteFont>("font");
             hudTex = Content.Load<Texture2D>("hud");
 
-            // [MUS-BGM] _bgm = Content.Load<Microsoft.Xna.Framework.Media.Song>("Music/bgm");
+            // [MUS-BGM] bgm = Content.Load<Microsoft.Xna.Framework.Media.Song>("Music/bgm");
             // [MUS-BGM] Microsoft.Xna.Framework.Media.MediaPlayer.IsRepeating = true;
             // [MUS-BGM] Microsoft.Xna.Framework.Media.MediaPlayer.Volume = 0.5f;
-            // [MUS-BGM] Microsoft.Xna.Framework.Media.MediaPlayer.Play(_bgm);
+            // [MUS-BGM] Microsoft.Xna.Framework.Media.MediaPlayer.Play(bgm);
 
             tilesSprite = new VoxelSprite(16, 16, 16);
             BvxLoader.LoadSprite(Path.Combine(Content.RootDirectory, "tiles.bvx"), ref tilesSprite);
@@ -137,8 +137,8 @@ namespace VoxelShooter
             tdCamera.Position = sideCamera.Position;
             tdCamera.Target   = sideCamera.Target;
 
-            _cameras = new ICamera[] { null, sideCamera, isoCamera, fpCamera, tdCamera };
-            // index 0 unused so _activeCameraIndex maps 1-4 directly
+            cameras = new ICamera[] { null, sideCamera, isoCamera, fpCamera, tdCamera };
+            // index 0 unused so activeCameraIndex maps 1-4 directly
 
             cameraManager = new CameraTransitionManager(sideCamera);
 
@@ -220,15 +220,15 @@ namespace VoxelShooter
                 else if (inputManager.IsPressed(VoxelAction.Camera4)) requested = 4;
 
                 if (requested == 0 && inputManager.IsPressed(VoxelAction.CameraNext))
-                    requested = (_activeCameraIndex % 4) + 1;   // 1→2→3→4→1
+                    requested = (activeCameraIndex % 4) + 1;   // 1→2→3→4→1
 
                 if (requested == 0 && inputManager.IsPressed(VoxelAction.CameraPrev))
-                    requested = ((_activeCameraIndex - 2 + 4) % 4) + 1;  // 1→4→3→2→1
+                    requested = ((activeCameraIndex - 2 + 4) % 4) + 1;  // 1→4→3→2→1
 
-                if (requested != 0 && requested != _activeCameraIndex)
+                if (requested != 0 && requested != activeCameraIndex)
                 {
-                    _activeCameraIndex = requested;
-                    cameraManager.TransitionTo(_cameras[_activeCameraIndex], 1.5f);
+                    activeCameraIndex = requested;
+                    cameraManager.TransitionTo(cameras[activeCameraIndex], 1.5f);
                 }
             }
 
@@ -298,7 +298,7 @@ namespace VoxelShooter
             drawEffect.World = cameraManager.WorldMatrix;
 
             double elapsed = gameTime.ElapsedGameTime.TotalSeconds;
-            if (elapsed > 0) _fps = MathHelper.Lerp((float)_fps, (float)(1.0 / elapsed), 0.05f);
+            if (elapsed > 0) fps = MathHelper.Lerp((float)fps, (float)(1.0 / elapsed), 0.05f);
 
             base.Update(gameTime);
         }
@@ -357,7 +357,7 @@ namespace VoxelShooter
             //spriteBatch.DrawString(font, gameHero.XP.ToString("0.00"), Vector2.One * 5, Color.White);
 
             // Camera indicator, bottom-left (viewport-anchored, no offset)
-            string camLabel = $"{_cameraNames[_activeCameraIndex]}  [{_activeCameraIndex}]";
+            string camLabel = $"{cameraNames[activeCameraIndex]}  [{activeCameraIndex}]";
             spriteBatch.DrawString(font, camLabel,
                 new Vector2(70f, GraphicsDevice.Viewport.Height - 70f),
                 Color.White * 0.85f);
@@ -372,7 +372,7 @@ namespace VoxelShooter
                 0f, Vector2.Zero, 0.6f, SpriteEffects.None, 0f);
 
             // FPS counter, top-right
-            spriteBatch.DrawString(font, $"{_fps:0} fps",
+            spriteBatch.DrawString(font, $"{fps:0} fps",
                 new Vector2(GraphicsDevice.Viewport.Width - 110f, 8f),
                 Color.White * 0.5f);
 

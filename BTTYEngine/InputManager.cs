@@ -142,7 +142,7 @@ namespace BTTYEngine
         InputState current = new InputState();
         InputState last    = new InputState();
 
-        readonly Dictionary<int, ActionBinding> _bindings = new Dictionary<int, ActionBinding>();
+        readonly Dictionary<int, ActionBinding> bindings = new Dictionary<int, ActionBinding>();
 
         // Binding setup
 
@@ -220,14 +220,14 @@ namespace BTTYEngine
         /// <summary>True while any of the action's bindings are held.</summary>
         public bool IsHeld(TAction action)
         {
-            if (!_bindings.TryGetValue(ToInt(action), out var b)) return false;
+            if (!bindings.TryGetValue(ToInt(action), out var b)) return false;
             return IsActiveInFull(b, current, last);
         }
 
         /// <summary>True only on the frame the action's binding first becomes active (rising edge).</summary>
         public bool IsPressed(TAction action)
         {
-            if (!_bindings.TryGetValue(ToInt(action), out var b)) return false;
+            if (!bindings.TryGetValue(ToInt(action), out var b)) return false;
             return IsActiveIn(b, current) && !IsActiveIn(b, last);
         }
 
@@ -240,7 +240,7 @@ namespace BTTYEngine
         /// </summary>
         public float GetValue(TAction action)
         {
-            if (!_bindings.TryGetValue(ToInt(action), out var b)) return 0f;
+            if (!bindings.TryGetValue(ToInt(action), out var b)) return 0f;
             if (b.AxisSign != 0f)
             {
                 float v = ReadAxis(current.PadState, b.BoundAxis) * b.AxisSign;
@@ -349,8 +349,8 @@ namespace BTTYEngine
         ActionBinding GetOrAdd(TAction action)
         {
             int key = ToInt(action);
-            if (!_bindings.TryGetValue(key, out var b))
-                _bindings[key] = b = new ActionBinding();
+            if (!bindings.TryGetValue(key, out var b))
+                bindings[key] = b = new ActionBinding();
             return b;
         }
 

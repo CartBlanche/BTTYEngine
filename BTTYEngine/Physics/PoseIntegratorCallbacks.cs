@@ -9,7 +9,7 @@ namespace BTTYEngine
     public struct PoseIntegratorCallbacks : IPoseIntegratorCallbacks
     {
         public Vector3 Gravity;
-        private Vector3Wide _gravityWideDt;
+        private Vector3Wide gravityWideDt;
 
         public PoseIntegratorCallbacks(Vector3 gravity) { Gravity = gravity; }
 
@@ -21,7 +21,7 @@ namespace BTTYEngine
 
         public void PrepareForIntegration(float dt)
         {
-            _gravityWideDt = Vector3Wide.Broadcast(Gravity * dt);
+            gravityWideDt = Vector3Wide.Broadcast(Gravity * dt);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -31,7 +31,7 @@ namespace BTTYEngine
             Vector<int> integrationMask, int workerIndex, Vector<float> dt,
             ref BodyVelocityWide velocity)
         {
-            velocity.Linear += _gravityWideDt;
+            velocity.Linear += gravityWideDt;
         }
     }
 }

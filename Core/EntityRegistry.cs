@@ -11,21 +11,21 @@ namespace VoxelShooter
     {
         public static readonly EntityRegistry Instance = new EntityRegistry();
 
-        private readonly Dictionary<int, IEntity> _map = new();
+        private readonly Dictionary<int, IEntity> map = new();
 
         public void Register(BodyHandle handle, IEntity entity)
         {
-            _map[handle.Value] = entity;
+            map[handle.Value] = entity;
         }
 
         public void Unregister(BodyHandle handle)
         {
-            _map.Remove(handle.Value);
+            map.Remove(handle.Value);
         }
 
         public IEntity FindByHandle(BodyHandle handle)
         {
-            _map.TryGetValue(handle.Value, out var entity);
+            map.TryGetValue(handle.Value, out var entity);
             return entity;
         }
     }

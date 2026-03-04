@@ -12,7 +12,7 @@ namespace BTTYEngine
     {
         public static readonly CollisionEventHandler Instance = new CollisionEventHandler();
 
-        private readonly ConcurrentQueue<CollisionEvent> _pending = new();
+        private readonly ConcurrentQueue<CollisionEvent> pending = new();
 
         // Called from Bepu worker threads; no MonoGame API calls here.
         public void OnContact(CollidablePair pair, int workerIndex)
@@ -20,14 +20,14 @@ namespace BTTYEngine
             if (pair.A.Mobility == CollidableMobility.Dynamic &&
                 pair.B.Mobility == CollidableMobility.Dynamic)
             {
-                _pending.Enqueue(new CollisionEvent(pair.A.BodyHandle, pair.B.BodyHandle));
+                pending.Enqueue(new CollisionEvent(pair.A.BodyHandle, pair.B.BodyHandle));
             }
         }
 
         // Called from game thread each frame after physicsManager.Step().
         public void ProcessPending(Action<CollisionEvent> handler)
         {
-            while (_pending.TryDequeue(out var evt))
+            while (pending.TryDequeue(out var evt))
                 handler(evt);
         }
     }

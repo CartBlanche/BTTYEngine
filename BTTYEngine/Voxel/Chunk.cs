@@ -25,41 +25,41 @@ namespace BTTYEngine
         // Static scratch buffers shared across all chunks (mesh building is single-threaded).
         // Short indices cap unique vertices at 32 767; 8 191 quads × 4 verts = 32 764 ≤ short.MaxValue.
         private const int MAX_QUADS = 8191;
-        private static readonly VertexPositionNormalColor[] _scratchVerts   = new VertexPositionNormalColor[MAX_QUADS * 4];
-        private static readonly short[]                     _scratchIndexes = new short[MAX_QUADS * 6];
-        private int _quadCount;
-        public  int QuadCount => _quadCount;
+        private static readonly VertexPositionNormalColor[] scratchVerts   = new VertexPositionNormalColor[MAX_QUADS * 4];
+        private static readonly short[]                     scratchIndexes = new short[MAX_QUADS * 6];
+        private int quadCount;
+        public  int QuadCount => quadCount;
 
         // Face normals, one per axis direction.
-        private static readonly Vector3 _normNZ = new Vector3( 0f,  0f, -1f);
-        private static readonly Vector3 _normPZ = new Vector3( 0f,  0f,  1f);
-        private static readonly Vector3 _normNX = new Vector3(-1f,  0f,  0f);
-        private static readonly Vector3 _normPX = new Vector3( 1f,  0f,  0f);
-        private static readonly Vector3 _normPY = new Vector3( 0f,  1f,  0f);
-        private static readonly Vector3 _normNY = new Vector3( 0f, -1f,  0f);
+        private static readonly Vector3 normNZ = new Vector3( 0f,  0f, -1f);
+        private static readonly Vector3 normPZ = new Vector3( 0f,  0f,  1f);
+        private static readonly Vector3 normNX = new Vector3(-1f,  0f,  0f);
+        private static readonly Vector3 normPX = new Vector3( 1f,  0f,  0f);
+        private static readonly Vector3 normPY = new Vector3( 0f,  1f,  0f);
+        private static readonly Vector3 normNY = new Vector3( 0f, -1f,  0f);
 
         // Corner offsets, name encodes sign per axis: n=−HALF_SIZE, p=+HALF_SIZE (x,y,z).
-        private static readonly Vector3 _nnn = new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE);
-        private static readonly Vector3 _pnn = new Vector3( Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE);
-        private static readonly Vector3 _ppn = new Vector3( Voxel.HALF_SIZE,  Voxel.HALF_SIZE, -Voxel.HALF_SIZE);
-        private static readonly Vector3 _npn = new Vector3(-Voxel.HALF_SIZE,  Voxel.HALF_SIZE, -Voxel.HALF_SIZE);
-        private static readonly Vector3 _nnp = new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE,  Voxel.HALF_SIZE);
-        private static readonly Vector3 _pnp = new Vector3( Voxel.HALF_SIZE, -Voxel.HALF_SIZE,  Voxel.HALF_SIZE);
-        private static readonly Vector3 _ppp = new Vector3( Voxel.HALF_SIZE,  Voxel.HALF_SIZE,  Voxel.HALF_SIZE);
-        private static readonly Vector3 _npp = new Vector3(-Voxel.HALF_SIZE,  Voxel.HALF_SIZE,  Voxel.HALF_SIZE);
+        private static readonly Vector3 nnn = new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE);
+        private static readonly Vector3 pnn = new Vector3( Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE);
+        private static readonly Vector3 ppn = new Vector3( Voxel.HALF_SIZE,  Voxel.HALF_SIZE, -Voxel.HALF_SIZE);
+        private static readonly Vector3 npn = new Vector3(-Voxel.HALF_SIZE,  Voxel.HALF_SIZE, -Voxel.HALF_SIZE);
+        private static readonly Vector3 nnp = new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE,  Voxel.HALF_SIZE);
+        private static readonly Vector3 pnp = new Vector3( Voxel.HALF_SIZE, -Voxel.HALF_SIZE,  Voxel.HALF_SIZE);
+        private static readonly Vector3 ppp = new Vector3( Voxel.HALF_SIZE,  Voxel.HALF_SIZE,  Voxel.HALF_SIZE);
+        private static readonly Vector3 npp = new Vector3(-Voxel.HALF_SIZE,  Voxel.HALF_SIZE,  Voxel.HALF_SIZE);
 
         // Neighbour chunk references cached at the start of each UpdateMesh call.
         // Eliminates repeated parentWorld.Chunks[worldX±1,...] array lookups during mesh building.
-        private Chunk _nX, _pX, _nY, _pY, _nZ, _pZ;
+        private Chunk nX, pX, nY, pY, nZ, pZ;
 
         private void CacheNeighbours()
         {
-            _nX = worldX > 0                        ? parentWorld.Chunks[worldX - 1, worldY, worldZ] : null;
-            _pX = worldX < parentWorld.X_CHUNKS - 1 ? parentWorld.Chunks[worldX + 1, worldY, worldZ] : null;
-            _nY = worldY > 0                        ? parentWorld.Chunks[worldX, worldY - 1, worldZ] : null;
-            _pY = worldY < parentWorld.Y_CHUNKS - 1 ? parentWorld.Chunks[worldX, worldY + 1, worldZ] : null;
-            _nZ = worldZ > 0                        ? parentWorld.Chunks[worldX, worldY, worldZ - 1] : null;
-            _pZ = worldZ < parentWorld.Z_CHUNKS - 1 ? parentWorld.Chunks[worldX, worldY, worldZ + 1] : null;
+            nX = worldX > 0                        ? parentWorld.Chunks[worldX - 1, worldY, worldZ] : null;
+            pX = worldX < parentWorld.X_CHUNKS - 1 ? parentWorld.Chunks[worldX + 1, worldY, worldZ] : null;
+            nY = worldY > 0                        ? parentWorld.Chunks[worldX, worldY - 1, worldZ] : null;
+            pY = worldY < parentWorld.Y_CHUNKS - 1 ? parentWorld.Chunks[worldX, worldY + 1, worldZ] : null;
+            nZ = worldZ > 0                        ? parentWorld.Chunks[worldX, worldY, worldZ - 1] : null;
+            pZ = worldZ < parentWorld.Z_CHUNKS - 1 ? parentWorld.Chunks[worldX, worldY, worldZ + 1] : null;
         }
         
         public Chunk(VoxelWorld world, int wx, int wy, int wz, bool createGround)
@@ -106,7 +106,7 @@ namespace BTTYEngine
 
         public void UpdateMesh()
         {
-            _quadCount = 0;
+            quadCount = 0;
             CacheNeighbours();
 
             // Pre-compute the per-chunk world-space origin once outside all loops.
@@ -123,23 +123,23 @@ namespace BTTYEngine
 
                         Vector3 worldOffset = new Vector3(baseX + x * Voxel.SIZE, baseY - y * Voxel.SIZE, baseZ + z * Voxel.SIZE);
 
-                        if (!IsVoxelAt(x, y, z - 1)) MakeQuad(worldOffset, _nnn, _pnn, _ppn, _npn, _normNZ, CalcLighting(x, y, z,     v.TR, v.TG, v.TB));
-                        if (!IsVoxelAt(x, y, z + 1)) MakeQuad(worldOffset, _ppp, _pnp, _nnp, _npp, _normPZ, CalcLighting(x, y, z,     v.TR, v.TG, v.TB));
-                        if (!IsVoxelAt(x - 1, y, z)) MakeQuad(worldOffset, _nnn, _npn, _npp, _nnp, _normNX, CalcLighting(x - 1, y, z, v.SR, v.SG, v.SB));
-                        if (!IsVoxelAt(x + 1, y, z)) MakeQuad(worldOffset, _ppp, _ppn, _pnn, _pnp, _normPX, CalcLighting(x + 1, y, z, v.SR, v.SG, v.SB));
-                        if (!IsVoxelAt(x, y - 1, z)) MakeQuad(worldOffset, _npn, _ppn, _ppp, _npp, _normPY, CalcLighting(x, y - 1, z, v.TR, v.TG, v.TB));
-                        if (!IsVoxelAt(x, y + 1, z)) MakeQuad(worldOffset, _pnp, _pnn, _nnn, _nnp, _normNY, CalcLighting(x, y + 1, z, v.SR, v.SG, v.SB));
+                        if (!IsVoxelAt(x, y, z - 1)) MakeQuad(worldOffset, nnn, pnn, ppn, npn, normNZ, CalcLighting(x, y, z,     v.TR, v.TG, v.TB));
+                        if (!IsVoxelAt(x, y, z + 1)) MakeQuad(worldOffset, ppp, pnp, nnp, npp, normPZ, CalcLighting(x, y, z,     v.TR, v.TG, v.TB));
+                        if (!IsVoxelAt(x - 1, y, z)) MakeQuad(worldOffset, nnn, npn, npp, nnp, normNX, CalcLighting(x - 1, y, z, v.SR, v.SG, v.SB));
+                        if (!IsVoxelAt(x + 1, y, z)) MakeQuad(worldOffset, ppp, ppn, pnn, pnp, normPX, CalcLighting(x + 1, y, z, v.SR, v.SG, v.SB));
+                        if (!IsVoxelAt(x, y - 1, z)) MakeQuad(worldOffset, npn, ppn, ppp, npp, normPY, CalcLighting(x, y - 1, z, v.TR, v.TG, v.TB));
+                        if (!IsVoxelAt(x, y + 1, z)) MakeQuad(worldOffset, pnp, pnn, nnn, nnp, normNY, CalcLighting(x, y + 1, z, v.SR, v.SG, v.SB));
                     }
 
             // Copy scratch buffers into instance arrays, reallocating only when capacity is exceeded.
-            int vertCount = _quadCount * 4;
-            int idxCount  = _quadCount * 6;
+            int vertCount = quadCount * 4;
+            int idxCount  = quadCount * 6;
             if (VertexArray == null || VertexArray.Length < vertCount)
                 VertexArray = new VertexPositionNormalColor[vertCount];
             if (IndexArray == null || IndexArray.Length < idxCount)
                 IndexArray = new short[idxCount];
-            Array.Copy(_scratchVerts,   VertexArray, vertCount);
-            Array.Copy(_scratchIndexes, IndexArray,  idxCount);
+            Array.Copy(scratchVerts,   VertexArray, vertCount);
+            Array.Copy(scratchIndexes, IndexArray,  idxCount);
 
             Updated = false;
         }
@@ -213,21 +213,21 @@ namespace BTTYEngine
 
         void MakeQuad(Vector3 offset, Vector3 tl, Vector3 tr, Vector3 br, Vector3 bl, Vector3 norm, Color col)
         {
-            if (_quadCount >= MAX_QUADS) return;
-            int vBase = _quadCount * 4;
-            int iBase = _quadCount * 6;
-            _scratchVerts[vBase]     = new VertexPositionNormalColor(offset + tl, norm, col);
-            _scratchVerts[vBase + 1] = new VertexPositionNormalColor(offset + tr, norm, col);
-            _scratchVerts[vBase + 2] = new VertexPositionNormalColor(offset + br, norm, col);
-            _scratchVerts[vBase + 3] = new VertexPositionNormalColor(offset + bl, norm, col);
+            if (quadCount >= MAX_QUADS) return;
+            int vBase = quadCount * 4;
+            int iBase = quadCount * 6;
+            scratchVerts[vBase]     = new VertexPositionNormalColor(offset + tl, norm, col);
+            scratchVerts[vBase + 1] = new VertexPositionNormalColor(offset + tr, norm, col);
+            scratchVerts[vBase + 2] = new VertexPositionNormalColor(offset + br, norm, col);
+            scratchVerts[vBase + 3] = new VertexPositionNormalColor(offset + bl, norm, col);
             // Indices are purely a function of quad position, no intermediate list needed.
-            _scratchIndexes[iBase]     = (short)(vBase);
-            _scratchIndexes[iBase + 1] = (short)(vBase + 1);
-            _scratchIndexes[iBase + 2] = (short)(vBase + 2);
-            _scratchIndexes[iBase + 3] = (short)(vBase + 2);
-            _scratchIndexes[iBase + 4] = (short)(vBase + 3);
-            _scratchIndexes[iBase + 5] = (short)(vBase);
-            _quadCount++;
+            scratchIndexes[iBase]     = (short)(vBase);
+            scratchIndexes[iBase + 1] = (short)(vBase + 1);
+            scratchIndexes[iBase + 2] = (short)(vBase + 2);
+            scratchIndexes[iBase + 3] = (short)(vBase + 2);
+            scratchIndexes[iBase + 4] = (short)(vBase + 3);
+            scratchIndexes[iBase + 5] = (short)(vBase);
+            quadCount++;
         }
 
         public bool IsVoxelAt(int x, int y, int z)
@@ -243,9 +243,9 @@ namespace BTTYEngine
             // Single-axis out-of-bounds: use cached neighbour with direct array access (no recursion).
             // Multi-axis out-of-bounds (diagonal corner in CalcLighting): return false (treat as unoccluded).
             Chunk n;
-            if (!xOk && yOk && zOk) { n = x < 0 ? _nX : _pX; return n != null && n.Voxels[x < 0 ? X_SIZE + x : x - X_SIZE, y, z].Active; }
-            if (xOk && !yOk && zOk) { n = y < 0 ? _nY : _pY; return n != null && n.Voxels[x, y < 0 ? Y_SIZE + y : y - Y_SIZE, z].Active; }
-            if (xOk && yOk && !zOk) { n = z < 0 ? _nZ : _pZ; return n != null && n.Voxels[x, y, z < 0 ? Z_SIZE + z : z - Z_SIZE].Active; }
+            if (!xOk && yOk && zOk) { n = x < 0 ? nX : pX; return n != null && n.Voxels[x < 0 ? X_SIZE + x : x - X_SIZE, y, z].Active; }
+            if (xOk && !yOk && zOk) { n = y < 0 ? nY : pY; return n != null && n.Voxels[x, y < 0 ? Y_SIZE + y : y - Y_SIZE, z].Active; }
+            if (xOk && yOk && !zOk) { n = z < 0 ? nZ : pZ; return n != null && n.Voxels[x, y, z < 0 ? Z_SIZE + z : z - Z_SIZE].Active; }
             return false;
         }
 

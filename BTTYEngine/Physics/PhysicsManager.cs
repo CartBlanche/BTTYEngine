@@ -18,7 +18,7 @@ namespace BTTYEngine
         /// <summary>The underlying BepuPhysics simulation. Use this to add bodies, constraints, etc.</summary>
         public Simulation Simulation { get; private set; }
 
-        private BufferPool _bufferPool;
+        private BufferPool bufferPool;
 
         /// <summary>
         /// Creates the BepuPhysics simulation with zero gravity and registers this instance
@@ -27,10 +27,10 @@ namespace BTTYEngine
         public void Initialize()
         {
             Instance = this;
-            _bufferPool = new BufferPool();
+            bufferPool = new BufferPool();
 
             Simulation = Simulation.Create(
-                _bufferPool,
+                bufferPool,
                 new NarrowPhaseCallbacks(),
                 new PoseIntegratorCallbacks(gravity: Vector3.Zero),
                 new SolveDescription(velocityIterationCount: 4, substepCount: 1));
@@ -49,7 +49,7 @@ namespace BTTYEngine
         public void Dispose()
         {
             Simulation?.Dispose();
-            _bufferPool?.Clear();
+            bufferPool?.Clear();
         }
     }
 }

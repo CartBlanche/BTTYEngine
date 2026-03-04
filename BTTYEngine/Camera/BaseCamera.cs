@@ -22,9 +22,9 @@ namespace BTTYEngine
 
         // Screen-shake
 
-        static readonly System.Random _shakeRng = new System.Random();
+        static readonly System.Random shakeRng = new System.Random();
 
-        float _shakeAmplitude;
+        float shakeAmplitude;
 
         /// <summary>
         /// Current per-frame XY eye offset produced by the active shake.
@@ -38,7 +38,7 @@ namespace BTTYEngine
         /// Override in a subclass to change the profile (e.g. dampen for iso, add roll).
         /// </summary>
         public virtual void TriggerShake(float amplitude)
-            => _shakeAmplitude = System.Math.Max(_shakeAmplitude, amplitude);
+            => shakeAmplitude = System.Math.Max(shakeAmplitude, amplitude);
 
         /// <summary>
         /// Decay the shake amplitude and refresh <see cref="ShakeOffset"/>.
@@ -46,15 +46,15 @@ namespace BTTYEngine
         /// </summary>
         protected void UpdateShake()
         {
-            _shakeAmplitude *= 0.85f;
-            if (_shakeAmplitude > 0.01f)
+            shakeAmplitude *= 0.85f;
+            if (shakeAmplitude > 0.01f)
             {
-                float r() => (float)(_shakeRng.NextDouble() * 2.0 - 1.0) * _shakeAmplitude;
+                float r() => (float)(shakeRng.NextDouble() * 2.0 - 1.0) * shakeAmplitude;
                 ShakeOffset = new Vector3(r(), r(), 0f);
             }
             else
             {
-                _shakeAmplitude = 0f;
+                shakeAmplitude = 0f;
                 ShakeOffset = Vector3.Zero;
             }
         }
