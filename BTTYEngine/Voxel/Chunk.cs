@@ -90,16 +90,16 @@ namespace BTTYEngine
         {
             if (x < 0 || y < 0 || z < 0 || x >= X_SIZE || y >= Y_SIZE || z >= Z_SIZE) return;
 
-            Voxels[x, y, z].Active = active;
-            Voxels[x, y, z].Type = type;
-            Voxels[x, y, z].Destructable = destruct;
-            Voxels[x, y, z].TR = top.R;
-            Voxels[x, y, z].TG = top.G;
-            Voxels[x, y, z].TB = top.B;
-            Voxels[x, y, z].SR = side.R;
-            Voxels[x, y, z].SG = side.G;
-            Voxels[x, y, z].SB = side.B;
-            //= new Voxel(active, type, top, side);
+            ref Voxel v = ref Voxels[x, y, z];
+            v.Active       = active;
+            v.Type         = type;
+            v.Destructable = destruct;
+            v.TR           = top.R;
+            v.TG           = top.G;
+            v.TB           = top.B;
+            v.SR           = side.R;
+            v.SG           = side.G;
+            v.SB           = side.B;
 
             Updated = true;
         }
@@ -152,13 +152,29 @@ namespace BTTYEngine
                 {
                     for (int zz = 0; zz < c.Z_SIZE; zz++)
                     {
-                        if (c.Voxels[xx, yy, zz].Active)
-                        {
-                            SetVoxel(x + xx, y + ((c.Z_SIZE - 1) - zz), z + yy, true, 0, VoxelType.Prefab, c.Voxels[xx, yy, zz].Color, new Color(c.Voxels[xx, yy, zz].Color.ToVector3() * 0.5f));
-                        }
+                        ref readonly SpriteVoxel src = ref c.Voxels[xx, yy, zz];
+                        if (!src.Active) continue;
+
+                        int dx = x + xx;
+                        int dy = y + ((c.Z_SIZE - 1) - zz);
+                        int dz = z + yy;
+                        if (dx < 0 || dy < 0 || dz < 0 || dx >= X_SIZE || dy >= Y_SIZE || dz >= Z_SIZE) continue;
+
+                        Color side = new Color(src.Color.ToVector3() * 0.5f);
+                        ref Voxel dst = ref Voxels[dx, dy, dz];
+                        dst.Active       = true;
+                        dst.Type         = VoxelType.Prefab;
+                        dst.Destructable = 0;
+                        dst.TR           = src.Color.R;
+                        dst.TG           = src.Color.G;
+                        dst.TB           = src.Color.B;
+                        dst.SR           = side.R;
+                        dst.SG           = side.G;
+                        dst.SB           = side.B;
                     }
                 }
             }
+            Updated = true;
         }
 
         // Accepts raw colour bytes to avoid constructing a Color struct at each of the 6 callsites.
