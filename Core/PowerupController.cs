@@ -66,6 +66,13 @@ namespace VoxelShooter
             foreach (Powerup p in Powerups.Where(part => part.Active))
             {
                 p.Update(gameTime, gameWorld, gameHero, scrollPos);
+
+                // Check whether any enemy is close enough to bump the powerup.
+                // O(powerups × enemies) but both counts are tiny so cost is negligible.
+                if (EnemyController.Instance != null)
+                    foreach (Enemy e in EnemyController.Instance.Enemies)
+                        if (e.Active && Vector3.DistanceSquared(p.Position, e.Position) < 49f)
+                            p.ApplyEnemyBump(e);
             }
 
             cameraView       = gameCamera.ViewMatrix;
