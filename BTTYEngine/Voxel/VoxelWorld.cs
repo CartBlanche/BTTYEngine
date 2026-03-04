@@ -46,10 +46,7 @@ namespace BTTYEngine
 
         public void Update(GameTime gameTime, ICamera gameCamera)
         {
-            X_SIZE = X_CHUNKS * Chunk.X_SIZE;
-            Y_SIZE = Y_CHUNKS * Chunk.Y_SIZE;
-            Z_SIZE = Z_CHUNKS * Chunk.Z_SIZE;
-
+            // X_SIZE/Y_SIZE/Z_SIZE are fixed after construction, no per-frame recompute needed.
             redrawTime += gameTime.ElapsedGameTime.TotalMilliseconds;
             if (redrawTime > REDRAW_INTERVAL)
             {
@@ -184,7 +181,8 @@ namespace BTTYEngine
 
             
 
-            c.SetVoxel(x - ((x / Chunk.X_SIZE) * Chunk.X_SIZE), y - ((y / Chunk.Y_SIZE) * Chunk.Y_SIZE), z - ((z / Chunk.Z_SIZE) * Chunk.Z_SIZE), active, destruct, type, top, side);
+            // Chunk dimensions are powers of two, use bitmask to get the local voxel offset.
+            c.SetVoxel(x & (Chunk.X_SIZE - 1), y & (Chunk.Y_SIZE - 1), z & (Chunk.Z_SIZE - 1), active, destruct, type, top, side);
 
             c.Updated = true;
         }
@@ -195,19 +193,17 @@ namespace BTTYEngine
 
             Chunk c = GetChunkAtWorldPosition(x, y, z);
 
-            c.Voxels[x - ((x / Chunk.X_SIZE) * Chunk.X_SIZE), y - ((y / Chunk.Y_SIZE) * Chunk.Y_SIZE), z - ((z / Chunk.Z_SIZE) * Chunk.Z_SIZE)].Active = active;
+            c.Voxels[x & (Chunk.X_SIZE - 1), y & (Chunk.Y_SIZE - 1), z & (Chunk.Z_SIZE - 1)].Active = active;
 
-            //c.Updated = true;
-
-            //if (x - ((x / Chunk.X_SIZE) * Chunk.X_SIZE) == 0 && x != 0) GetChunkAtWorldPosition(x - 1, y, z).Updated = true;
-            //if (x - ((x / Chunk.X_SIZE) * Chunk.X_SIZE) == Chunk.X_SIZE-1 && x < X_SIZE-1) GetChunkAtWorldPosition(x + 1, y, z).Updated = true;
-            //if (y - ((y / Chunk.Y_SIZE) * Chunk.Y_SIZE) == 0 && y != 0) GetChunkAtWorldPosition(x, y-1, z).Updated = true;
-            //if (y - ((y / Chunk.Y_SIZE) * Chunk.Y_SIZE) == Chunk.Y_SIZE - 1 && y < Y_SIZE - 1) GetChunkAtWorldPosition(x, y + 1, z).Updated = true;
-
-            for (int xx = c.worldX - 1; xx <= c.worldX + 1; xx++)
-                for (int yy = c.worldY - 1; yy <= c.worldY + 1; yy++)
-                    for (int zz = c.worldZ - 1; zz <= c.worldZ + 1; zz++)
-                        if (xx >= 0 && xx < X_CHUNKS && yy >= 0 && yy < Y_CHUNKS && zz >= 0 && zz < Z_CHUNKS) AddToUpdateQueue(Chunks[xx, yy, zz]);
+            // Queue this chunk and all neighbours for mesh rebuild.
+            // Clamp bounds up front so the inner loop body needs no guard check.
+            int x0 = Math.Max(c.worldX - 1, 0),          x1 = Math.Min(c.worldX + 1, X_CHUNKS - 1);
+            int y0 = Math.Max(c.worldY - 1, 0),          y1 = Math.Min(c.worldY + 1, Y_CHUNKS - 1);
+            int z0 = Math.Max(c.worldZ - 1, 0),          z1 = Math.Min(c.worldZ + 1, Z_CHUNKS - 1);
+            for (int xx = x0; xx <= x1; xx++)
+                for (int yy = y0; yy <= y1; yy++)
+                    for (int zz = z0; zz <= z1; zz++)
+                        AddToUpdateQueue(Chunks[xx, yy, zz]);
         }
 
         public Voxel GetVoxel(int x, int y, int z)
@@ -216,7 +212,7 @@ namespace BTTYEngine
 
             Chunk c = GetChunkAtWorldPosition(x, y, z);
 
-            return c.Voxels[x - ((x / Chunk.X_SIZE) * Chunk.X_SIZE), y - ((y / Chunk.Y_SIZE) * Chunk.Y_SIZE), z - ((z / Chunk.Z_SIZE) * Chunk.Z_SIZE)];
+            return c.Voxels[x & (Chunk.X_SIZE - 1), y & (Chunk.Y_SIZE - 1), z & (Chunk.Z_SIZE - 1)];
         }
         public Voxel GetVoxel(Vector3 screen)
         {
@@ -248,12 +244,15 @@ namespace BTTYEngine
         {
             if (x < 0 || y < 0 || z < 0 || x >= X_SIZE || y >= Y_SIZE || z >= Z_SIZE) return null;
 
-            if (Chunks[x / Chunk.X_SIZE, y / Chunk.Y_SIZE, z / Chunk.Z_SIZE] == null)
-            {
-                Chunks[x / Chunk.X_SIZE, y / Chunk.Y_SIZE, z / Chunk.Z_SIZE] = new Chunk(this, x / Chunk.X_SIZE, y / Chunk.Y_SIZE, z / Chunk.Z_SIZE, false);
-            }
+            // Compute chunk indices once to avoid repeated division.
+            int cx = x / Chunk.X_SIZE;
+            int cy = y / Chunk.Y_SIZE;
+            int cz = z / Chunk.Z_SIZE;
 
-            return Chunks[x / Chunk.X_SIZE, y / Chunk.Y_SIZE, z / Chunk.Z_SIZE];
+            if (Chunks[cx, cy, cz] == null)
+                Chunks[cx, cy, cz] = new Chunk(this, cx, cy, cz, false);
+
+            return Chunks[cx, cy, cz];
         }
 
 

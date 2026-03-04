@@ -1,4 +1,4 @@
-// VoxToBvx — converts MagicaVoxel .vox to BTTYEngine .bvx (v1)
+// VoxToBvx, converts MagicaVoxel .vox to BTTYEngine .bvx (v1)
 // Usage: VoxToBvx <input.vox> [output.bvx]  (output defaults to input stem + .bvx)
 //
 // Axis remap (inverse of VxsToVox):
@@ -47,7 +47,7 @@ if (Encoding.ASCII.GetString(voxBytes, 0, 4) != "VOX ")
 
 int version = BitConverter.ToInt32(voxBytes, 4);
 if (version != 150)
-    Console.Error.WriteLine($"Warning: unexpected .vox version {version} (expected 150) — continuing anyway.");
+    Console.Error.WriteLine($"Warning: unexpected .vox version {version} (expected 150), continuing anyway.");
 
 // 2. Parse chunks
 static ChunkInfo ReadChunkHeader(byte[] data, int offset)
@@ -132,7 +132,7 @@ int bttyZ = voxSizeY; // vox Y was btty Z
 
 if (bttyX > 255 || bttyY > 255 || bttyZ > 255)
     Console.Error.WriteLine(
-        $"Warning: dimension(s) exceed 255 — storing as uint16 in .bvx header but " +
+        $"Warning: dimension(s) exceed 255, storing as uint16 in .bvx header but " +
         $"AnimChunk may need to be widened if it currently caps at byte dimensions.");
 
 int frameCount = sizeChunks.Count;
@@ -162,8 +162,8 @@ if (paletteRgba is not null)
 }
 else
 {
-    // No RGBA chunk — use a greyscale fallback palette so the file is still valid.
-    Console.Error.WriteLine("Warning: no RGBA chunk in .vox file — using greyscale fallback palette.");
+    // No RGBA chunk, use a greyscale fallback palette so the file is still valid.
+    Console.Error.WriteLine("Warning: no RGBA chunk in .vox file, using greyscale fallback palette.");
     bvxPalette = new byte[1024];
     for (int i = 1; i <= 255; i++)
     {
@@ -233,7 +233,7 @@ ushort frameRate = (ushort)(frameCount > 1 ? 12 : 0);
 w.Write(frameRate);
 // [24-26] Reserved
 w.Write((byte)0); w.Write((byte)0); w.Write((byte)0);
-// [27]   PaletteSize — 256 entries; stored as 0 (byte wraps: 256 % 256 == 0).
+// [27]   PaletteSize, 256 entries; stored as 0 (byte wraps: 256 % 256 == 0).
 //         The loader checks Version == 1 and treats 0 as 256.
 w.Write((byte)0);
 // [28-1051] Palette (256 × RGBA = 1024 bytes)

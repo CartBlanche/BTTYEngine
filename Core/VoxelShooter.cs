@@ -333,13 +333,13 @@ namespace VoxelShooter
             }
             //spriteBatch.DrawString(font, gameHero.XP.ToString("0.00"), Vector2.One * 5, Color.White);
 
-            // Camera indicator — bottom-left (viewport-anchored, no offset)
+            // Camera indicator, bottom-left (viewport-anchored, no offset)
             string camLabel = $"{_cameraNames[_activeCameraIndex]}  [{_activeCameraIndex}]";
             spriteBatch.DrawString(font, camLabel,
                 new Vector2(70f, GraphicsDevice.Viewport.Height - 70f),
                 Color.White * 0.85f);
 
-            // Controls strip — bottom-right, small and subtle
+            // Controls strip, bottom-right, small and subtle
             string controls = "WASD Move   Z/RT Fire   1-4 Camera   LB/RB Cycle   Esc Quit";
             Vector2 ctrlSize = font.MeasureString(controls);
             spriteBatch.DrawString(font, controls,
@@ -348,7 +348,7 @@ namespace VoxelShooter
                 Color.White * 0.65f,
                 0f, Vector2.Zero, 0.6f, SpriteEffects.None, 0f);
 
-            // FPS counter — top-right
+            // FPS counter, top-right
             spriteBatch.DrawString(font, $"{_fps:0} fps",
                 new Vector2(GraphicsDevice.Viewport.Width - 110f, 8f),
                 Color.White * 0.5f);

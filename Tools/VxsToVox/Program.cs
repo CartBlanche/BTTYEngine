@@ -1,4 +1,4 @@
-// VxsToVox — converts .vxs (GarethIW format) to MagicaVoxel .vox
+// VxsToVox, converts .vxs (GarethIW format) to MagicaVoxel .vox
 // Usage: VxsToVox <input.vxs> <output.vox>
 //
 // Axis remap applied during conversion:
@@ -109,7 +109,7 @@ foreach (var frame in frames)
         {
             if (nextIndex > 255)
             {
-                // More than 255 unique colours — find nearest already-registered colour
+                // More than 255 unique colours, find nearest already-registered colour
                 // (simple nearest-neighbour in RGB space).
                 int bestIdx  = 1;
                 int bestDist = int.MaxValue;

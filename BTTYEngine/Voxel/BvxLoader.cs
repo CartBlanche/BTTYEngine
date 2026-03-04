@@ -88,7 +88,7 @@ namespace BTTYEngine
             sprite.ChunkRTs.Clear();
             sprite.FrameRate = frameRate;
 
-            // Read voxel data — layout [frame][z][y][x]
+            // Read voxel data, layout [frame][z][y][x]
             int frameStride = sizeZ * sizeY * sizeX;
 
             for (int f = 0; f < frameCount; f++)
@@ -106,7 +106,7 @@ namespace BTTYEngine
                         {
                             int   offset    = frameBase + z * sizeY * sizeX + y * sizeX + x;
                             byte  index     = data[offset];
-                            if (index == 0) continue; // air — leave voxel inactive
+                            if (index == 0) continue; // air, leave voxel inactive
 
                             chunk.SetVoxel(x, y, z, true, palette[index]);
                         }

@@ -30,7 +30,7 @@ namespace BTTYEngine
         private int _quadCount;
         public  int QuadCount => _quadCount;
 
-        // Face normals — one per axis direction.
+        // Face normals, one per axis direction.
         private static readonly Vector3 _normNZ = new Vector3( 0f,  0f, -1f);
         private static readonly Vector3 _normPZ = new Vector3( 0f,  0f,  1f);
         private static readonly Vector3 _normNX = new Vector3(-1f,  0f,  0f);
@@ -38,7 +38,7 @@ namespace BTTYEngine
         private static readonly Vector3 _normPY = new Vector3( 0f,  1f,  0f);
         private static readonly Vector3 _normNY = new Vector3( 0f, -1f,  0f);
 
-        // Corner offsets — name encodes sign per axis: n=−HALF_SIZE, p=+HALF_SIZE (x,y,z).
+        // Corner offsets, name encodes sign per axis: n=−HALF_SIZE, p=+HALF_SIZE (x,y,z).
         private static readonly Vector3 _nnn = new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE);
         private static readonly Vector3 _pnn = new Vector3( Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE);
         private static readonly Vector3 _ppn = new Vector3( Voxel.HALF_SIZE,  Voxel.HALF_SIZE, -Voxel.HALF_SIZE);
@@ -192,7 +192,7 @@ namespace BTTYEngine
             for (int zz = 0; zz < 4; zz++)
             {
                 float intensity = (intensityFactor / 4f) * (4f - zz);
-                // Three straight-back probes at close/mid/far depth — weights 3+0.5+0.5=4 match original total.
+                // Three straight-back probes at close/mid/far depth, weights 3+0.5+0.5=4 match original total.
                 if ((hit & 0x001u) == 0 && IsVoxelAt(x, y, z + zz))           { light -= intensity * 3f;   hit |= 0x001u; }
                 if ((hit & 0x002u) == 0 && IsVoxelAt(x, y, z + (zz + 5)))     { light -= intensity * 0.5f; hit |= 0x002u; }
                 if ((hit & 0x004u) == 0 && IsVoxelAt(x, y, z + (zz + 10)))    { light -= intensity * 0.5f; hit |= 0x004u; }
@@ -204,7 +204,7 @@ namespace BTTYEngine
                 if ((hit & 0x100u) == 0 && IsVoxelAt(x - zz, y + zz, z + zz)) { light -= intensity;        hit |= 0x100u; }
                 if ((hit & 0x200u) == 0 && IsVoxelAt(x, y + zz, z + zz))      { light -= intensity;        hit |= 0x200u; }
                 if ((hit & 0x400u) == 0 && IsVoxelAt(x + zz, y + zz, z + zz)) { light -= intensity;        hit |= 0x400u; }
-                if (hit == 0x7FFu) break; // all 11 directions shadowed — early exit now reachable
+                if (hit == 0x7FFu) break; // all 11 directions shadowed, early exit now reachable
             }
 
             light = MathHelper.Clamp(light, 0f, 1f);
@@ -220,7 +220,7 @@ namespace BTTYEngine
             _scratchVerts[vBase + 1] = new VertexPositionNormalColor(offset + tr, norm, col);
             _scratchVerts[vBase + 2] = new VertexPositionNormalColor(offset + br, norm, col);
             _scratchVerts[vBase + 3] = new VertexPositionNormalColor(offset + bl, norm, col);
-            // Indices are purely a function of quad position — no intermediate list needed.
+            // Indices are purely a function of quad position, no intermediate list needed.
             _scratchIndexes[iBase]     = (short)(vBase);
             _scratchIndexes[iBase + 1] = (short)(vBase + 1);
             _scratchIndexes[iBase + 2] = (short)(vBase + 2);
