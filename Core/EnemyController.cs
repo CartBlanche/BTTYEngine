@@ -197,6 +197,21 @@ namespace VoxelShooter
             }
 		}
 
+        /// <summary>
+        /// Clears all active enemies, pending waves, and spawn queue, then repopulates
+        /// the spawn queue from <paramref name="spawnLayer"/> so a full restart from the
+        /// beginning of the level is possible.
+        /// </summary>
+        public void Reset(MapObjectLayer spawnLayer)
+        {
+            if (PhysicsManager.Instance != null)
+                foreach (var e in Enemies)
+                    e.DestroyPhysics(PhysicsManager.Instance);
+            Enemies.Clear();
+            Waves.Clear();
+            Spawns.Clear();
+            foreach (MapObject o in spawnLayer.Objects) Spawns.Add(o);
+        }
 
 	}
 }

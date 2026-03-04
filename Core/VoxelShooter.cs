@@ -60,6 +60,13 @@ namespace VoxelShooter
 
         InputManager<VoxelAction> inputManager = new InputManager<VoxelAction>();
 
+        MapObjectLayer spawnLayer;           // promoted from LoadContent local so RestartGame() can repopulate enemies
+
+        // "You Died!" state — Demon's Souls style death penalty
+        float youDiedTimer          = 0f;    // ms counting down from 3200 → 0; non-zero freezes gameplay
+        float deathExplosionTimer   = 0f;    // 600ms ship-explosion pause before the overlay appears
+        float nextStartHealth       = 100f;  // 100 on first run, fixed at 50 after the first death
+
         SpriteFont font;
 
         // [MUS-BGM] Microsoft.Xna.Framework.Media.Song bgm;
@@ -109,7 +116,7 @@ namespace VoxelShooter
 
             gameMap = Content.Load<Map>("1");
             tileLayer = (TileLayer)gameMap.GetLayer("tiles");
-            MapObjectLayer spawnLayer = (MapObjectLayer)gameMap.GetLayer("spawns");
+            spawnLayer = (MapObjectLayer)gameMap.GetLayer("spawns");
 
             gameWorld = new VoxelWorld(gameMap.Width, 11, 1);
 
@@ -189,6 +196,42 @@ namespace VoxelShooter
         }
 
         /// <summary>
+        /// Rebuilds the level from scratch and resets all entities and controllers.
+        /// The hero's health is set to <see cref="nextStartHealth"/> (100 on the first
+        /// run, 50 on every subsequent run after the first death).
+        /// </summary>
+        void RestartGame()
+        {
+            // Rebuild the voxel world from the original map data.
+            gameWorld = new VoxelWorld(gameMap.Width, 11, 1);
+            for (int yy = 0; yy < 11; yy++)
+                for (int xx = 0; xx < 12; xx++)
+                    if (tileLayer.Tiles[xx, yy] != null)
+                        gameWorld.CopySprite(xx * Chunk.X_SIZE, yy * Chunk.Y_SIZE, 0, tilesSprite.AnimChunks[tileLayer.Tiles[xx, yy].Index - 1]);
+            gameWorld.UpdateWorldMeshes();
+
+            // Reset level-scroll state back to the beginning.
+            scrollSpeed  = 0.2f;
+            scrollDist   = 0f;
+            scrollPos    = -100f;
+            scrollColumn = 12;
+
+            // Snap all cameras back to the world start position.
+            Vector3 camStart = new Vector3(0f, -(gameWorld.Y_SIZE * Voxel.HALF_SIZE), 0f);
+            cameraManager.Position = camStart;
+            cameraManager.Target   = camStart;
+
+            // Clear and repopulate all controllers.
+            enemyController.Reset(spawnLayer);
+            projectileController.Reset();
+            powerupController.Reset();
+            gameStarfield.Reset();
+
+            // Restart the hero with the correct starting health (100 first time, 50 thereafter).
+            gameHero.ResetForRestart(physicsManager, nextStartHealth);
+        }
+
+        /// <summary>
         /// UnloadContent will be called once per game and is the place to unload
         /// all content.
         /// </summary>
@@ -210,6 +253,42 @@ namespace VoxelShooter
                 this.Exit();
 
             if (!IsActive) return;
+
+            // Freeze all gameplay during the "You Died!" overlay — keep camera and FPS alive.
+            if (youDiedTimer > 0f)
+            {
+                youDiedTimer -= (float)gameTime.ElapsedGameTime.TotalMilliseconds;
+                if (youDiedTimer <= 0f) { youDiedTimer = 0f; RestartGame(); }
+                inputManager.EndInputProcessing();
+                cameraManager.Update(gameTime, gameWorld);
+                drawEffect.View  = cameraManager.ViewMatrix;
+                drawEffect.World = cameraManager.WorldMatrix;
+                double deadSecs = gameTime.ElapsedGameTime.TotalSeconds;
+                if (deadSecs > 0) fps = MathHelper.Lerp((float)fps, (float)(1.0 / deadSecs), 0.05f);
+                base.Update(gameTime);
+                return;
+            }
+
+            // Ship-explosion phase: gameplay frozen but particles keep simulating.
+            if (deathExplosionTimer > 0f)
+            {
+                deathExplosionTimer -= (float)gameTime.ElapsedGameTime.TotalMilliseconds;
+                if (deathExplosionTimer <= 0f)
+                {
+                    deathExplosionTimer = 0f;
+                    nextStartHealth     = 50f;
+                    youDiedTimer        = 3200f;
+                }
+                inputManager.EndInputProcessing();
+                cameraManager.Update(gameTime, gameWorld);
+                particleController.Update(gameTime, cameraManager, gameWorld);
+                drawEffect.View  = cameraManager.ViewMatrix;
+                drawEffect.World = cameraManager.WorldMatrix;
+                double explodeSecs = gameTime.ElapsedGameTime.TotalSeconds;
+                if (explodeSecs > 0) fps = MathHelper.Lerp((float)fps, (float)(1.0 / explodeSecs), 0.05f);
+                base.Update(gameTime);
+                return;
+            }
 
             // Camera selection: keys 1-4, RB=next, LB=prev
             {
@@ -282,6 +361,17 @@ namespace VoxelShooter
 
             gameHero.Update(gameTime, cameraManager, gameWorld, scrollSpeed);
 
+            // Trigger the ship-explosion phase the first frame health hits zero.
+            if (gameHero.Health <= 0f && youDiedTimer == 0f && deathExplosionTimer == 0f)
+            {
+                gameHero.Dead = true;
+                // Scatter several bursts across the ship's extent for a dramatic effect.
+                for (int i = 0; i < 5; i++)
+                    particleController.SpawnExplosion(gameHero.Position +
+                        new Vector3(Helper.RandomFloat(-5f, 5f), Helper.RandomFloat(-4f, 4f), 0f));
+                deathExplosionTimer = 600f;
+            }
+
             enemyController.Update(gameTime, cameraManager, gameHero, gameWorld, scrollPos, scrollSpeed);
             projectileController.Update(gameTime, cameraManager, gameHero, gameWorld, scrollPos);
 
@@ -335,7 +425,7 @@ namespace VoxelShooter
                 }
             }
 
-            gameHero.Draw(GraphicsDevice);
+            if (!gameHero.Dead) gameHero.Draw(GraphicsDevice);
 
             enemyController.Draw(cameraManager);
             projectileController.Draw(cameraManager);
@@ -347,7 +437,8 @@ namespace VoxelShooter
             spriteBatch.Begin();
             spriteBatch.Draw(hudTex, new Vector2(16, 16) + offset, new Rectangle(0, 0, 16, 688), Color.White * 0.2f);
             spriteBatch.Draw(hudTex, new Vector2(40, 16) + offset, new Rectangle(32, 0, 16, 688), Color.White * 0.2f);
-            spriteBatch.Draw(hudTex, new Vector2(16, 16 + (int)((688f / 100f) * (100f - gameHero.Health))) + offset, new Rectangle(0, 0, 16, (int)((688f / 100f) * (gameHero.Health))), Color.White);
+            float clampedHealth = MathHelper.Clamp(gameHero.Health, 0f, 100f);
+            spriteBatch.Draw(hudTex, new Vector2(16, 16 + (int)((688f / 100f) * (100f - clampedHealth))) + offset, new Rectangle(0, 0, 16, (int)((688f / 100f) * clampedHealth)), Color.White);
             spriteBatch.Draw(hudTex, new Vector2(40, 16 + (int)((688f / 100f) * (100f - gameHero.XP))) + offset, new Rectangle(32, 0, 16, (int)((688f / 100f) * (gameHero.XP))), Color.White);
             for (int i = 0; i < 5; i++)
             {
@@ -375,6 +466,30 @@ namespace VoxelShooter
             spriteBatch.DrawString(font, $"{fps:0} fps",
                 new Vector2(GraphicsDevice.Viewport.Width - 110f, 8f),
                 Color.White * 0.5f);
+
+            // ── "You Died!" overlay ──────────────────────────────────────────────────
+            // Fades in over 0-800ms, holds 800-2400ms, fades out 2400-3200ms.
+            if (youDiedTimer > 0f)
+            {
+                float diedElapsed = 3200f - youDiedTimer;
+                float diedAlpha   = diedElapsed < 800f  ? diedElapsed / 800f          :
+                                    diedElapsed < 2400f ? 1f                           :
+                                                          (3200f - diedElapsed) / 800f;
+                const string diedText  = "You Died!";
+                const float  diedScale = 4f;
+                Vector2 diedSize = font.MeasureString(diedText) * diedScale;
+                Vector2 diedPos  = new Vector2(
+                    (GraphicsDevice.Viewport.Width  - diedSize.X) / 2f,
+                    (GraphicsDevice.Viewport.Height - diedSize.Y) / 2f);
+                // Drop shadow
+                spriteBatch.DrawString(font, diedText, diedPos + new Vector2(4f, 4f),
+                    new Color(0f, 0f, 0f, diedAlpha * 0.75f),
+                    0f, Vector2.Zero, diedScale, SpriteEffects.None, 0f);
+                // Foreground — deep red
+                spriteBatch.DrawString(font, diedText, diedPos,
+                    new Color(0.85f, 0.05f, 0.05f, diedAlpha),
+                    0f, Vector2.Zero, diedScale, SpriteEffects.None, 0f);
+            }
 
             spriteBatch.End();
 

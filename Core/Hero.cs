@@ -393,6 +393,28 @@ namespace VoxelShooter
             }
         }
 
-        
+        /// <summary>
+        /// Fully resets the hero for a level restart.  Destroys and recreates the physics body,
+        /// restores spawn position, and sets <paramref name="health"/> (typically half the
+        /// previous starting value — a Demon's Souls-style penalty).
+        /// </summary>
+        public void ResetForRestart(PhysicsManager physics, float health)
+        {
+            DestroyPhysics(physics);
+            Position       = new Vector3(-150f, -45f, 5f);
+            Speed          = Vector3.Zero;
+            Health         = health;
+            XP             = 0f;
+            Dead           = false;
+            hitAlpha       = 0f;
+            knockback      = Vector3.Zero;
+            fireCooldown   = 0;
+            rocketCooldown = 0;
+            hitImmunityMs  = 0;
+            powerupLevel   = 0;
+            orbActive      = false;
+            InitPhysics(physics);
+        }
+
     }
 }
