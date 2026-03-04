@@ -8,6 +8,22 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>..\icon.ico</ApplicationIcon>
   </PropertyGroup>
+  <!-- Centralized Icon Resources -->
+  <ItemGroup>
+    <None Include="..\icon.ico">
+      <Link>Icon.ico</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="VoxelShooter.icns">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <EmbeddedResource Include="..\icon.ico">
+      <LogicalName>Icon.ico</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\icon.bmp">
+      <LogicalName>Icon.bmp</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Core\Core.csproj" />
   </ItemGroup>
