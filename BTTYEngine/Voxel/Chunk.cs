@@ -105,7 +105,7 @@ namespace BTTYEngine
                         Vector3 worldOffset = new Vector3(baseX + x * Voxel.SIZE, baseY - y * Voxel.SIZE, baseZ + z * Voxel.SIZE);
 
                         if (!IsVoxelAt(x, y, z - 1)) MakeQuad(worldOffset, new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(0f, 0f, -1f), CalcLighting(x, y, z,     v.TR, v.TG, v.TB));
-                        if (!IsVoxelAt(x, y, z + 1)) MakeQuad(worldOffset, new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(0f, 0f, 1f),  CalcLighting(x, y, z + 2, v.TR, v.TG, v.TB));
+                        if (!IsVoxelAt(x, y, z + 1)) MakeQuad(worldOffset, new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(0f, 0f, 1f),  CalcLighting(x, y, z,     v.TR, v.TG, v.TB));
                         if (!IsVoxelAt(x - 1, y, z)) MakeQuad(worldOffset, new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(-1f, 0f, 0f), CalcLighting(x - 1, y, z, v.SR, v.SG, v.SB));
                         if (!IsVoxelAt(x + 1, y, z)) MakeQuad(worldOffset, new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(1f, 0f, 0f),  CalcLighting(x + 1, y, z, v.SR, v.SG, v.SB));
                         if (!IsVoxelAt(x, y - 1, z)) MakeQuad(worldOffset, new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(0f, 1f, 0f),   CalcLighting(x, y - 1, z, v.TR, v.TG, v.TB));
@@ -145,28 +145,29 @@ namespace BTTYEngine
         // eliminating the reset loop and allowing an early exit once all directions are shadowed.
         Color CalcLighting(int x, int y, int z, byte r, byte g, byte b)
         {
-            z--;
+            z++;  // Y-up: probe away from voxel in +Z (toward camera), matching original Y-down behaviour in reverse
 
             Vector3 colVect = new Color(r, g, b).ToVector3();
             const float intensityFactor = 0.12f;
             float light = 1f;
-            uint hit = 0; // bits 0-8 correspond to the 9 shadow directions
+            uint hit = 0; // bits 0-10 correspond to the 11 shadow directions
 
             for (int zz = 0; zz < 4; zz++)
             {
                 float intensity = (intensityFactor / 4f) * (4f - zz);
-                if ((hit & 0x001u) == 0 && IsVoxelAt(x, y, z - zz))           { light -= intensity * 4f; hit |= 0x001u; }
-                if ((hit & 0x001u) == 0 && IsVoxelAt(x, y, z - (zz + 5)))     { light -= intensity;      hit |= 0x001u; }
-                if ((hit & 0x001u) == 0 && IsVoxelAt(x, y, z - (zz + 10)))    { light -= intensity;      hit |= 0x001u; }
-                if ((hit & 0x002u) == 0 && IsVoxelAt(x - zz, y - zz, z - zz)) { light -= intensity;      hit |= 0x002u; }
-                if ((hit & 0x004u) == 0 && IsVoxelAt(x, y - zz, z - zz))      { light -= intensity;      hit |= 0x004u; }
-                if ((hit & 0x008u) == 0 && IsVoxelAt(x + zz, y - zz, z - zz)) { light -= intensity;      hit |= 0x008u; }
-                if ((hit & 0x010u) == 0 && IsVoxelAt(x - zz, y, z - zz))      { light -= intensity;      hit |= 0x010u; }
-                if ((hit & 0x020u) == 0 && IsVoxelAt(x + zz, y, z - zz))      { light -= intensity;      hit |= 0x020u; }
-                if ((hit & 0x040u) == 0 && IsVoxelAt(x - zz, y + zz, z - zz)) { light -= intensity;      hit |= 0x040u; }
-                if ((hit & 0x080u) == 0 && IsVoxelAt(x, y + zz, z - zz))      { light -= intensity;      hit |= 0x080u; }
-                if ((hit & 0x100u) == 0 && IsVoxelAt(x + zz, y + zz, z - zz)) { light -= intensity;      hit |= 0x100u; }
-                if (hit == 0x1FFu) break; // all 9 directions shadowed, no need to continue
+                // Three straight-back probes at close/mid/far depth — weights 3+0.5+0.5=4 match original total.
+                if ((hit & 0x001u) == 0 && IsVoxelAt(x, y, z + zz))           { light -= intensity * 3f;   hit |= 0x001u; }
+                if ((hit & 0x002u) == 0 && IsVoxelAt(x, y, z + (zz + 5)))     { light -= intensity * 0.5f; hit |= 0x002u; }
+                if ((hit & 0x004u) == 0 && IsVoxelAt(x, y, z + (zz + 10)))    { light -= intensity * 0.5f; hit |= 0x004u; }
+                if ((hit & 0x008u) == 0 && IsVoxelAt(x - zz, y - zz, z + zz)) { light -= intensity;        hit |= 0x008u; }
+                if ((hit & 0x010u) == 0 && IsVoxelAt(x, y - zz, z + zz))      { light -= intensity;        hit |= 0x010u; }
+                if ((hit & 0x020u) == 0 && IsVoxelAt(x + zz, y - zz, z + zz)) { light -= intensity;        hit |= 0x020u; }
+                if ((hit & 0x040u) == 0 && IsVoxelAt(x - zz, y, z + zz))      { light -= intensity;        hit |= 0x040u; }
+                if ((hit & 0x080u) == 0 && IsVoxelAt(x + zz, y, z + zz))      { light -= intensity;        hit |= 0x080u; }
+                if ((hit & 0x100u) == 0 && IsVoxelAt(x - zz, y + zz, z + zz)) { light -= intensity;        hit |= 0x100u; }
+                if ((hit & 0x200u) == 0 && IsVoxelAt(x, y + zz, z + zz))      { light -= intensity;        hit |= 0x200u; }
+                if ((hit & 0x400u) == 0 && IsVoxelAt(x + zz, y + zz, z + zz)) { light -= intensity;        hit |= 0x400u; }
+                if (hit == 0x7FFu) break; // all 11 directions shadowed — early exit now reachable
             }
 
             light = MathHelper.Clamp(light, 0f, 1f);
