@@ -175,17 +175,15 @@ namespace VoxelShooter
 
             foreach (Enemy e in Enemies.Where(en => en is Turret))
             {
+                Turret t = (Turret)e;
                 drawEffect.DiffuseColor = new Vector3(1f, 1f - e.hitAlpha, 1f - e.hitAlpha);
                 drawEffect.Alpha = 1f;
                 drawEffect.World = gameCamera.WorldMatrix *
-                    Matrix.CreateRotationX(e.Rotation.X + (((Turret)e).Inverted ? MathHelper.Pi : 0f)) *
-                    Matrix.CreateTranslation(new Vector3(0, ((Turret)e).Inverted?4f:-3f, 0)) *
-                        Matrix.CreateRotationZ(e.Rotation.Z + (((Turret)e).barrelRot + MathHelper.PiOver2)) *
-                        
-                        Matrix.CreateRotationY(e.Rotation.Y) *
-                        //Matrix.CreateRotationZ(e.Rotation.Z) *
-                        Matrix.CreateScale(e.Scale) *
-                        Matrix.CreateTranslation(e.Position + new Vector3(0, ((Turret)e).Inverted ? -4f : 3f, 0));
+                    Matrix.CreateRotationX(e.Rotation.X + (t.Inverted ? MathHelper.Pi : 0f)) *
+                    Matrix.CreateRotationZ(e.Rotation.Z + (t.barrelRot + MathHelper.PiOver2)) *
+                    Matrix.CreateRotationY(e.Rotation.Y) *
+                    Matrix.CreateScale(e.Scale) *
+                    Matrix.CreateTranslation(e.Position);
                         
 
                 foreach (EffectPass pass in drawEffect.CurrentTechnique.Passes)
