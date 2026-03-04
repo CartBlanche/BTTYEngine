@@ -4,7 +4,7 @@ using BepuPhysics.CollisionDetection;
 using System;
 using System.Collections.Concurrent;
 
-namespace VoxelShooter
+namespace BTTYEngine
 {
     public record struct CollisionEvent(BodyHandle A, BodyHandle B);
 

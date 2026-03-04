@@ -1,7 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace VoxelShooter
+namespace BTTYEngine
 {
     /// <summary>
     /// Pure top-down camera: eye directly above the hero looking straight down.

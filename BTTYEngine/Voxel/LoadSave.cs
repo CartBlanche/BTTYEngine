@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Xml.Serialization;
 
-namespace VoxelShooter
+namespace BTTYEngine
 {
     public static class LoadVoxels
     {

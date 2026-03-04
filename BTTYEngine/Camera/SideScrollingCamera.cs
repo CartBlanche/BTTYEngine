@@ -1,7 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace VoxelShooter
+namespace BTTYEngine
 {
     /// <summary>
     /// A side-scrolling perspective camera for VoxelShooter (and similar 2.5-D voxel games).

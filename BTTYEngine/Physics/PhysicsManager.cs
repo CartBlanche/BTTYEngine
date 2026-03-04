@@ -3,7 +3,7 @@ using BepuUtilities.Memory;
 using System;
 using System.Numerics;
 
-namespace VoxelShooter
+namespace BTTYEngine
 {
     /// <summary>
     /// Wraps a BepuPhysics <see cref="BepuPhysics.Simulation"/> and exposes a simple

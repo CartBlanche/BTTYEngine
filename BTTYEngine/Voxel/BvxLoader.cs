@@ -2,7 +2,7 @@ using Microsoft.Xna.Framework;
 using System;
 using System.IO;
 
-namespace VoxelShooter
+namespace BTTYEngine
 {
     /// <summary>
     /// Loads VoxelSprites from the .bvx v1 file format.

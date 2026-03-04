@@ -1,3 +1,5 @@
+using BTTYEngine;
+
 namespace VoxelShooter
 {
     public interface IEntity

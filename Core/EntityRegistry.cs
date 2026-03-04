@@ -1,6 +1,8 @@
 using BepuPhysics;
 using System.Collections.Generic;
 
+using BTTYEngine;
+
 namespace VoxelShooter
 {
     // Maps Bepu BodyHandles to game entities for collision event dispatch.

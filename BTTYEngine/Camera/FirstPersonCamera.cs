@@ -1,7 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace VoxelShooter
+namespace BTTYEngine
 {
     /// <summary>
     /// First-person camera: eye positioned at the hero with a fixed look-ahead along the

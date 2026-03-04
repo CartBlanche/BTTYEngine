@@ -3,7 +3,7 @@ using BepuUtilities;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
-namespace VoxelShooter
+namespace BTTYEngine
 {
     // Side-scroller: no world gravity. Gravity field kept for future per-entity gravity scaling.
     public struct PoseIntegratorCallbacks : IPoseIntegratorCallbacks

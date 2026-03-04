@@ -1,7 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
-namespace VoxelShooter
+namespace BTTYEngine
 {
     /// <summary>
     /// Snapshot of keyboard and gamepad state for a single frame.

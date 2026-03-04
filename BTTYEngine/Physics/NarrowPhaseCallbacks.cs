@@ -3,7 +3,7 @@ using BepuPhysics.Collidables;
 using BepuPhysics.CollisionDetection;
 using BepuPhysics.Constraints;
 
-namespace VoxelShooter
+namespace BTTYEngine
 {
     public struct NarrowPhaseCallbacks : INarrowPhaseCallbacks
     {

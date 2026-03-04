@@ -1,6 +1,6 @@
 using BepuPhysics.Collidables;
 
-namespace VoxelShooter
+namespace BTTYEngine
 {
     public enum PhysicsGroup : byte
     {

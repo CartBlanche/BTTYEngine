@@ -1,7 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace VoxelShooter
+namespace BTTYEngine
 {
     /// <summary>
     /// Core camera abstraction for the BTTYEngine.

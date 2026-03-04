@@ -1,10 +1,10 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace VoxelShooter
+namespace BTTYEngine
 {
     public class VoxelSprite
     {

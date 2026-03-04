@@ -10,6 +10,8 @@ using Microsoft.Xna.Framework.Media;
 using System.IO;
 using TiledLib;
 
+using BTTYEngine;
+
 namespace VoxelShooter
 {
     /// <summary>

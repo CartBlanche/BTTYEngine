@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.Xna.Framework;
 
-namespace VoxelShooter
+namespace BTTYEngine
 {
     public static class Helper
     {
