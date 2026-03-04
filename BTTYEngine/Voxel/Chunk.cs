@@ -30,6 +30,24 @@ namespace BTTYEngine
         private int _quadCount;
         public  int QuadCount => _quadCount;
 
+        // Face normals — one per axis direction.
+        private static readonly Vector3 _normNZ = new Vector3( 0f,  0f, -1f);
+        private static readonly Vector3 _normPZ = new Vector3( 0f,  0f,  1f);
+        private static readonly Vector3 _normNX = new Vector3(-1f,  0f,  0f);
+        private static readonly Vector3 _normPX = new Vector3( 1f,  0f,  0f);
+        private static readonly Vector3 _normPY = new Vector3( 0f,  1f,  0f);
+        private static readonly Vector3 _normNY = new Vector3( 0f, -1f,  0f);
+
+        // Corner offsets — name encodes sign per axis: n=−HALF_SIZE, p=+HALF_SIZE (x,y,z).
+        private static readonly Vector3 _nnn = new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE);
+        private static readonly Vector3 _pnn = new Vector3( Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE);
+        private static readonly Vector3 _ppn = new Vector3( Voxel.HALF_SIZE,  Voxel.HALF_SIZE, -Voxel.HALF_SIZE);
+        private static readonly Vector3 _npn = new Vector3(-Voxel.HALF_SIZE,  Voxel.HALF_SIZE, -Voxel.HALF_SIZE);
+        private static readonly Vector3 _nnp = new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE,  Voxel.HALF_SIZE);
+        private static readonly Vector3 _pnp = new Vector3( Voxel.HALF_SIZE, -Voxel.HALF_SIZE,  Voxel.HALF_SIZE);
+        private static readonly Vector3 _ppp = new Vector3( Voxel.HALF_SIZE,  Voxel.HALF_SIZE,  Voxel.HALF_SIZE);
+        private static readonly Vector3 _npp = new Vector3(-Voxel.HALF_SIZE,  Voxel.HALF_SIZE,  Voxel.HALF_SIZE);
+
         // Neighbour chunk references cached at the start of each UpdateMesh call.
         // Eliminates repeated parentWorld.Chunks[worldX±1,...] array lookups during mesh building.
         private Chunk _nX, _pX, _nY, _pY, _nZ, _pZ;
@@ -105,12 +123,12 @@ namespace BTTYEngine
 
                         Vector3 worldOffset = new Vector3(baseX + x * Voxel.SIZE, baseY - y * Voxel.SIZE, baseZ + z * Voxel.SIZE);
 
-                        if (!IsVoxelAt(x, y, z - 1)) MakeQuad(worldOffset, new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(0f, 0f, -1f), CalcLighting(x, y, z,     v.TR, v.TG, v.TB));
-                        if (!IsVoxelAt(x, y, z + 1)) MakeQuad(worldOffset, new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(0f, 0f, 1f),  CalcLighting(x, y, z,     v.TR, v.TG, v.TB));
-                        if (!IsVoxelAt(x - 1, y, z)) MakeQuad(worldOffset, new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(-1f, 0f, 0f), CalcLighting(x - 1, y, z, v.SR, v.SG, v.SB));
-                        if (!IsVoxelAt(x + 1, y, z)) MakeQuad(worldOffset, new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(1f, 0f, 0f),  CalcLighting(x + 1, y, z, v.SR, v.SG, v.SB));
-                        if (!IsVoxelAt(x, y - 1, z)) MakeQuad(worldOffset, new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(0f, 1f, 0f),   CalcLighting(x, y - 1, z, v.TR, v.TG, v.TB));
-                        if (!IsVoxelAt(x, y + 1, z)) MakeQuad(worldOffset, new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(0f, -1f, 0f),  CalcLighting(x, y + 1, z, v.SR, v.SG, v.SB));
+                        if (!IsVoxelAt(x, y, z - 1)) MakeQuad(worldOffset, _nnn, _pnn, _ppn, _npn, _normNZ, CalcLighting(x, y, z,     v.TR, v.TG, v.TB));
+                        if (!IsVoxelAt(x, y, z + 1)) MakeQuad(worldOffset, _ppp, _pnp, _nnp, _npp, _normPZ, CalcLighting(x, y, z,     v.TR, v.TG, v.TB));
+                        if (!IsVoxelAt(x - 1, y, z)) MakeQuad(worldOffset, _nnn, _npn, _npp, _nnp, _normNX, CalcLighting(x - 1, y, z, v.SR, v.SG, v.SB));
+                        if (!IsVoxelAt(x + 1, y, z)) MakeQuad(worldOffset, _ppp, _ppn, _pnn, _pnp, _normPX, CalcLighting(x + 1, y, z, v.SR, v.SG, v.SB));
+                        if (!IsVoxelAt(x, y - 1, z)) MakeQuad(worldOffset, _npn, _ppn, _ppp, _npp, _normPY, CalcLighting(x, y - 1, z, v.TR, v.TG, v.TB));
+                        if (!IsVoxelAt(x, y + 1, z)) MakeQuad(worldOffset, _pnp, _pnn, _nnn, _nnp, _normNY, CalcLighting(x, y + 1, z, v.SR, v.SG, v.SB));
                     }
 
             // Copy scratch buffers into instance arrays, reallocating only when capacity is exceeded.
