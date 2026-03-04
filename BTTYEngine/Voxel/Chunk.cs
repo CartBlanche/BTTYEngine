@@ -2,9 +2,6 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Xml.Serialization;
 
 namespace BTTYEngine
 {
@@ -25,10 +22,26 @@ namespace BTTYEngine
         public bool Visible = false;
         public bool Updated = false;
 
-        // Per-chunk scratch lists for mesh building � avoids the shared-state bug
-        // that arose from using parentWorld.Vertices / parentWorld.Indexes.
-        readonly List<VertexPositionNormalColor> vertices = new List<VertexPositionNormalColor>();
-        readonly List<short> indexes = new List<short>();
+        // Static scratch buffers shared across all chunks (mesh building is single-threaded).
+        // Short indices cap unique vertices at 32 767; 8 191 quads × 4 verts = 32 764 ≤ short.MaxValue.
+        private const int MAX_QUADS = 8191;
+        private static readonly VertexPositionNormalColor[] _scratchVerts   = new VertexPositionNormalColor[MAX_QUADS * 4];
+        private static readonly short[]                     _scratchIndexes = new short[MAX_QUADS * 6];
+        private int _quadCount;
+
+        // Neighbour chunk references cached at the start of each UpdateMesh call.
+        // Eliminates repeated parentWorld.Chunks[worldX±1,...] array lookups during mesh building.
+        private Chunk _nX, _pX, _nY, _pY, _nZ, _pZ;
+
+        private void CacheNeighbours()
+        {
+            _nX = worldX > 0                        ? parentWorld.Chunks[worldX - 1, worldY, worldZ] : null;
+            _pX = worldX < parentWorld.X_CHUNKS - 1 ? parentWorld.Chunks[worldX + 1, worldY, worldZ] : null;
+            _nY = worldY > 0                        ? parentWorld.Chunks[worldX, worldY - 1, worldZ] : null;
+            _pY = worldY < parentWorld.Y_CHUNKS - 1 ? parentWorld.Chunks[worldX, worldY + 1, worldZ] : null;
+            _nZ = worldZ > 0                        ? parentWorld.Chunks[worldX, worldY, worldZ - 1] : null;
+            _pZ = worldZ < parentWorld.Z_CHUNKS - 1 ? parentWorld.Chunks[worldX, worldY, worldZ + 1] : null;
+        }
         
         public Chunk(VoxelWorld world, int wx, int wy, int wz, bool createGround)
         {
@@ -74,39 +87,38 @@ namespace BTTYEngine
 
         public void UpdateMesh()
         {
-            Vector3 meshCenter = (new Vector3(X_SIZE, Y_SIZE, Z_SIZE) * Voxel.SIZE) / 2f;
-            vertices.Clear();
-            indexes.Clear();
+            _quadCount = 0;
+            CacheNeighbours();
+
+            // Pre-compute the per-chunk world-space origin once outside all loops.
+            float baseX =  worldX * (X_SIZE * Voxel.SIZE);
+            float baseY = -(worldY * (Y_SIZE * Voxel.SIZE));
+            float baseZ =  worldZ * (Z_SIZE * Voxel.SIZE);
 
             for (int z = Z_SIZE - 1; z >= 0; z--)
                 for (int y = 0; y < Y_SIZE; y++)
-                     for(int x=0;x<X_SIZE;x++)
+                    for (int x = 0; x < X_SIZE; x++)
                     {
-                        if (Voxels[x, y, z].Active == false) continue;
+                        ref Voxel v = ref Voxels[x, y, z];
+                        if (!v.Active) continue;
 
-                        Vector3 worldOffset = new Vector3(worldX*(X_SIZE*Voxel.SIZE), -(worldY*(Y_SIZE*Voxel.SIZE)),worldZ*(Z_SIZE*Voxel.SIZE)) + (new Vector3(x*Voxel.SIZE, -(y*Voxel.SIZE), z*Voxel.SIZE));
+                        Vector3 worldOffset = new Vector3(baseX + x * Voxel.SIZE, baseY - y * Voxel.SIZE, baseZ + z * Voxel.SIZE);
 
-                        if (!IsVoxelAt(x, y, z - 1)) MakeQuad(worldOffset, new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(0f, 0f, -1f), CalcLighting(x,y,z, new Color(Voxels[x, y, z].TR, Voxels[x, y, z].TG,Voxels[x, y, z].TB)));
-                        if (!IsVoxelAt(x, y, z + 1)) MakeQuad(worldOffset, new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(0f, 0f, 1f), CalcLighting(x, y, z + 2, new Color(Voxels[x, y, z].TR, Voxels[x, y, z].TG, Voxels[x, y, z].TB)));
-                        if (!IsVoxelAt(x - 1, y, z)) MakeQuad(worldOffset, new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(-1f, 0f, 0f), CalcLighting(x - 1, y, z, new Color(Voxels[x, y, z].SR, Voxels[x, y, z].SG, Voxels[x, y, z].SB)));
-                        if (!IsVoxelAt(x + 1, y, z)) MakeQuad(worldOffset, new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(1f, 0f, 0f), CalcLighting(x + 1, y, z, new Color(Voxels[x, y, z].SR, Voxels[x, y, z].SG, Voxels[x, y, z].SB)));
-                        if (!IsVoxelAt(x, y - 1, z)) MakeQuad(worldOffset, new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(0f, 1f, 0f), CalcLighting(x, y - 1, z, new Color(Voxels[x, y, z].TR, Voxels[x, y, z].TG, Voxels[x, y, z].TB)));
-                        if (!IsVoxelAt(x, y + 1, z)) MakeQuad(worldOffset, new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(0f, -1f, 0f), CalcLighting(x, y + 1, z, new Color(Voxels[x, y, z].SR, Voxels[x, y, z].SG, Voxels[x, y, z].SB))); 
+                        if (!IsVoxelAt(x, y, z - 1)) MakeQuad(worldOffset, new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(0f, 0f, -1f), CalcLighting(x, y, z,     v.TR, v.TG, v.TB));
+                        if (!IsVoxelAt(x, y, z + 1)) MakeQuad(worldOffset, new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(0f, 0f, 1f),  CalcLighting(x, y, z + 2, v.TR, v.TG, v.TB));
+                        if (!IsVoxelAt(x - 1, y, z)) MakeQuad(worldOffset, new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(-1f, 0f, 0f), CalcLighting(x - 1, y, z, v.SR, v.SG, v.SB));
+                        if (!IsVoxelAt(x + 1, y, z)) MakeQuad(worldOffset, new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(1f, 0f, 0f),  CalcLighting(x + 1, y, z, v.SR, v.SG, v.SB));
+                        if (!IsVoxelAt(x, y - 1, z)) MakeQuad(worldOffset, new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(0f, 1f, 0f),   CalcLighting(x, y - 1, z, v.TR, v.TG, v.TB));
+                        if (!IsVoxelAt(x, y + 1, z)) MakeQuad(worldOffset, new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(0f, -1f, 0f),  CalcLighting(x, y + 1, z, v.SR, v.SG, v.SB));
                     }
 
-            VertexArray = vertices.ToArray();
-            IndexArray = new short[indexes.Count];
-
-            for (int ind = 0; ind < indexes.Count / 6; ind++)
-            {
-                for (int i = 0; i < 6; i++)
-                {
-                    IndexArray[(ind * 6) + i] = (short)(indexes[(ind * 6) + i] + (ind * 4));
-                }
-            }
-
-            vertices.Clear();
-            indexes.Clear();
+            // Slice the scratch buffers down to exactly what was produced.
+            int vertCount = _quadCount * 4;
+            int idxCount  = _quadCount * 6;
+            VertexArray = new VertexPositionNormalColor[vertCount];
+            IndexArray  = new short[idxCount];
+            Array.Copy(_scratchVerts,   VertexArray, vertCount);
+            Array.Copy(_scratchIndexes, IndexArray,  idxCount);
 
             Updated = false;
         }
@@ -128,88 +140,74 @@ namespace BTTYEngine
             }
         }
 
-        bool[] lightingDirs = new bool[9];
-        Color CalcLighting(int x, int y, int z, Color currentColor)
+        // Accepts raw colour bytes to avoid constructing a Color struct at each of the 6 callsites.
+        // Uses a uint bitmask (one bit per shadow direction) instead of a bool[] field,
+        // eliminating the reset loop and allowing an early exit once all directions are shadowed.
+        Color CalcLighting(int x, int y, int z, byte r, byte g, byte b)
         {
-            //return currentColor;
             z--;
-            //if (x < 0 || y < 0 || z < 0 || x >= X_SIZE || y >= Y_SIZE || z >= Z_SIZE) return currentColor;
 
-            Vector3 colVect = currentColor.ToVector3();
-            float intensityFactor = 0.12f;
+            Vector3 colVect = new Color(r, g, b).ToVector3();
+            const float intensityFactor = 0.12f;
             float light = 1f;
-
-            for (int i = 0; i < 9; i++) lightingDirs[i] = false;
+            uint hit = 0; // bits 0-8 correspond to the 9 shadow directions
 
             for (int zz = 0; zz < 4; zz++)
             {
-                float intensity = (intensityFactor / 4f) * (4f - (float)zz);
-                if ((!lightingDirs[0]) && IsVoxelAt(x, y, z - zz)) { light -= (intensity * 4f); lightingDirs[0] = true; }
-                if ((!lightingDirs[0]) && IsVoxelAt(x, y, z - (zz + 5))) { light -= intensity; lightingDirs[0] = true; }
-                if ((!lightingDirs[0]) && IsVoxelAt(x, y, z - (zz + 10))) { light -= intensity; lightingDirs[0] = true; }
-                if ((!lightingDirs[1]) && IsVoxelAt(x - zz, y - zz, z - zz)) { light -= intensity; lightingDirs[1] = true; }
-                if ((!lightingDirs[2]) && IsVoxelAt(x, y - zz, z - zz)) { light -= intensity; lightingDirs[2] = true; }
-                if ((!lightingDirs[3]) && IsVoxelAt(x + zz, y - zz, z - zz)) { light -= intensity; lightingDirs[3] = true; }
-                if ((!lightingDirs[4]) && IsVoxelAt(x - zz, y, z - zz)) { light -= intensity; lightingDirs[4] = true; }
-                if ((!lightingDirs[5]) && IsVoxelAt(x + zz, y, z - zz)) { light -= intensity; lightingDirs[5] = true; }
-                if ((!lightingDirs[6]) && IsVoxelAt(x - zz, y + zz, z - zz)) { light -= intensity; lightingDirs[6] = true; }
-                if ((!lightingDirs[7]) && IsVoxelAt(x, y + zz, z - zz)) { light -= intensity; lightingDirs[7] = true; }
-                if ((!lightingDirs[8]) && IsVoxelAt(x + zz, y + zz, z - zz)) { light -= intensity; lightingDirs[8] = true; }
+                float intensity = (intensityFactor / 4f) * (4f - zz);
+                if ((hit & 0x001u) == 0 && IsVoxelAt(x, y, z - zz))           { light -= intensity * 4f; hit |= 0x001u; }
+                if ((hit & 0x001u) == 0 && IsVoxelAt(x, y, z - (zz + 5)))     { light -= intensity;      hit |= 0x001u; }
+                if ((hit & 0x001u) == 0 && IsVoxelAt(x, y, z - (zz + 10)))    { light -= intensity;      hit |= 0x001u; }
+                if ((hit & 0x002u) == 0 && IsVoxelAt(x - zz, y - zz, z - zz)) { light -= intensity;      hit |= 0x002u; }
+                if ((hit & 0x004u) == 0 && IsVoxelAt(x, y - zz, z - zz))      { light -= intensity;      hit |= 0x004u; }
+                if ((hit & 0x008u) == 0 && IsVoxelAt(x + zz, y - zz, z - zz)) { light -= intensity;      hit |= 0x008u; }
+                if ((hit & 0x010u) == 0 && IsVoxelAt(x - zz, y, z - zz))      { light -= intensity;      hit |= 0x010u; }
+                if ((hit & 0x020u) == 0 && IsVoxelAt(x + zz, y, z - zz))      { light -= intensity;      hit |= 0x020u; }
+                if ((hit & 0x040u) == 0 && IsVoxelAt(x - zz, y + zz, z - zz)) { light -= intensity;      hit |= 0x040u; }
+                if ((hit & 0x080u) == 0 && IsVoxelAt(x, y + zz, z - zz))      { light -= intensity;      hit |= 0x080u; }
+                if ((hit & 0x100u) == 0 && IsVoxelAt(x + zz, y + zz, z - zz)) { light -= intensity;      hit |= 0x100u; }
+                if (hit == 0x1FFu) break; // all 9 directions shadowed, no need to continue
             }
 
             light = MathHelper.Clamp(light, 0f, 1f);
-
             return new Color(colVect * light);
         }
 
         void MakeQuad(Vector3 offset, Vector3 tl, Vector3 tr, Vector3 br, Vector3 bl, Vector3 norm, Color col)
         {
-            vertices.Add(new VertexPositionNormalColor(offset + tl, norm, col));
-            vertices.Add(new VertexPositionNormalColor(offset + tr, norm, col));
-            vertices.Add(new VertexPositionNormalColor(offset + br, norm, col));
-            vertices.Add(new VertexPositionNormalColor(offset + bl, norm, col));
-            indexes.Add(0);
-            indexes.Add(1);
-            indexes.Add(2);
-            indexes.Add(2);
-            indexes.Add(3);
-            indexes.Add(0);
+            if (_quadCount >= MAX_QUADS) return;
+            int vBase = _quadCount * 4;
+            int iBase = _quadCount * 6;
+            _scratchVerts[vBase]     = new VertexPositionNormalColor(offset + tl, norm, col);
+            _scratchVerts[vBase + 1] = new VertexPositionNormalColor(offset + tr, norm, col);
+            _scratchVerts[vBase + 2] = new VertexPositionNormalColor(offset + br, norm, col);
+            _scratchVerts[vBase + 3] = new VertexPositionNormalColor(offset + bl, norm, col);
+            // Indices are purely a function of quad position — no intermediate list needed.
+            _scratchIndexes[iBase]     = (short)(vBase);
+            _scratchIndexes[iBase + 1] = (short)(vBase + 1);
+            _scratchIndexes[iBase + 2] = (short)(vBase + 2);
+            _scratchIndexes[iBase + 3] = (short)(vBase + 2);
+            _scratchIndexes[iBase + 4] = (short)(vBase + 3);
+            _scratchIndexes[iBase + 5] = (short)(vBase);
+            _quadCount++;
         }
 
         public bool IsVoxelAt(int x, int y, int z)
         {
-            if (x >= 0 && x < X_SIZE && y >= 0 && y < Y_SIZE && z >= 0 && z < Z_SIZE) return Voxels[x, y, z].Active;
+            // Fast path: within this chunk's bounds.
+            if (x >= 0 && x < X_SIZE && y >= 0 && y < Y_SIZE && z >= 0 && z < Z_SIZE)
+                return Voxels[x, y, z].Active;
 
-            if (x < 0)
-                if (worldX == 0) return false;
-                else if (parentWorld.Chunks[worldX - 1, worldY, worldZ] != null) return parentWorld.Chunks[worldX - 1, worldY, worldZ].IsVoxelAt(X_SIZE + x, y, z);
-                else return false;
+            bool xOk = x >= 0 && x < X_SIZE;
+            bool yOk = y >= 0 && y < Y_SIZE;
+            bool zOk = z >= 0 && z < Z_SIZE;
 
-            if (x >= X_SIZE)
-                if (worldX >= parentWorld.X_CHUNKS - 1) return false;
-                else if (parentWorld.Chunks[worldX + 1, worldY, worldZ]!=null) return parentWorld.Chunks[worldX + 1, worldY, worldZ].IsVoxelAt(x-X_SIZE, y, z);
-                else return false;
-
-            if (y < 0)
-                if (worldY == 0) return false;
-                else if (parentWorld.Chunks[worldX, worldY - 1, worldZ]!=null) return parentWorld.Chunks[worldX, worldY - 1, worldZ].IsVoxelAt(x, Y_SIZE + y, z);
-                else return false;
-
-            if (y >= Y_SIZE)
-                if (worldY >= parentWorld.Y_CHUNKS - 1) return false;
-                else if (parentWorld.Chunks[worldX, worldY + 1, worldZ]!=null) return parentWorld.Chunks[worldX, worldY + 1, worldZ].IsVoxelAt(x, y-Y_SIZE, z);
-                else return false;
-
-            if (z < 0)
-                if (worldZ == 0) return false;
-                else if (parentWorld.Chunks[worldX, worldY, worldZ - 1]!=null) return parentWorld.Chunks[worldX, worldY, worldZ - 1].IsVoxelAt(x, y, Z_SIZE+ z);
-                else return false;
-
-            if (z >= Z_SIZE)
-                if (worldZ >= parentWorld.Z_CHUNKS - 1) return false;
-                else if (parentWorld.Chunks[worldX, worldY, worldZ + 1]!= null) return parentWorld.Chunks[worldX, worldY, worldZ + 1].IsVoxelAt(x, y, z - Z_SIZE);
-                else return false;
-
+            // Single-axis out-of-bounds: use cached neighbour with direct array access (no recursion).
+            // Multi-axis out-of-bounds (diagonal corner in CalcLighting): return false (treat as unoccluded).
+            Chunk n;
+            if (!xOk && yOk && zOk) { n = x < 0 ? _nX : _pX; return n != null && n.Voxels[x < 0 ? X_SIZE + x : x - X_SIZE, y, z].Active; }
+            if (xOk && !yOk && zOk) { n = y < 0 ? _nY : _pY; return n != null && n.Voxels[x, y < 0 ? Y_SIZE + y : y - Y_SIZE, z].Active; }
+            if (xOk && yOk && !zOk) { n = z < 0 ? _nZ : _pZ; return n != null && n.Voxels[x, y, z < 0 ? Z_SIZE + z : z - Z_SIZE].Active; }
             return false;
         }
 
