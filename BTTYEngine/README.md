@@ -84,29 +84,155 @@ The shake decays at 15% per frame and won't cancel an in-progress shake. It take
 
 ## Input
 
-`InputManager` captures keyboard and gamepad state once per frame and exposes game-level queries so your game logic stays clean.
+`InputManager<TAction>` is a fully game-agnostic input system. The engine never hardcodes a single key, your game defines its own action enum and builds a binding table. Any combination of keyboard keys, gamepad buttons, gamepad analogue axes, mouse buttons, mouse analogue axes, and touch gestures can be bound to the same action.
+
+### Step 1:Define your action enum
 
 ```csharp
-var input = new InputManager();
-
-// In Update():
-input.BeginInputProcessing();
-
-Vector2 move = input.MoveDirection(); // WASD / arrows / left stick
-bool firing  = input.IsFiring();      // Z / RT / A
-bool quit    = input.IsExiting();     // Esc / Back
-
-input.EndInputProcessing();
+// In your game project (not in BTTYEngine)
+public enum MyAction
+{
+    MoveLeft, MoveRight, MoveUp, MoveDown,
+    Fire, Quit,
+    ZoomIn, ZoomOut,
+}
 ```
 
-There are also lower-level helpers such as `IsKeyDown`, `IsKeyPressed`, `IsButtonDown`, `IsButtonPressed`, if you need to check specific keys not covered by the built-in queries.
-
-For camera switching specifically:
+### Step 2:Create the manager
 
 ```csharp
-input.IsCameraSelectPressed(1..4)  // keyboard 1-4
-input.IsCameraNextPressed()        // RB / R1
-input.IsCameraPrevPressed()        // LB / L1
+InputManager<MyAction> input = new InputManager<MyAction>();
+```
+
+### Step 3:Bind physical inputs in `LoadContent`
+
+**Keyboard keys** one or more keys per call, all map to the same action:
+
+```csharp
+input.Bind(MyAction.MoveUp,    Keys.W, Keys.Up);
+input.Bind(MyAction.MoveDown,  Keys.S, Keys.Down);
+input.Bind(MyAction.MoveLeft,  Keys.A, Keys.Left);
+input.Bind(MyAction.MoveRight, Keys.D, Keys.Right);
+input.Bind(MyAction.Fire,      Keys.Space);
+input.Bind(MyAction.Quit,      Keys.Escape);
+```
+
+**Gamepad buttons:**
+
+```csharp
+input.Bind(MyAction.Fire, Buttons.A);
+input.Bind(MyAction.Quit, Buttons.Back);
+```
+
+**Gamepad analogue axes** (`sign` is `+1` for positive direction, `-1` for negative):
+
+```csharp
+// Left stick horizontal → MoveLeft / MoveRight
+input.BindAxis(MyAction.MoveRight, GamePadAxis.LeftStickX,  1f);
+input.BindAxis(MyAction.MoveLeft,  GamePadAxis.LeftStickX, -1f);
+
+// Left stick vertical → MoveUp / MoveDown
+input.BindAxis(MyAction.MoveUp,   GamePadAxis.LeftStickY,  1f);
+input.BindAxis(MyAction.MoveDown, GamePadAxis.LeftStickY, -1f);
+
+// Right trigger → Fire (with a 0.1 deadzone)
+input.BindAxis(MyAction.Fire, GamePadAxis.RightTrigger, 1f, 0.1f);
+```
+
+Available `GamePadAxis` values: `LeftStickX`, `LeftStickY`, `RightStickX`, `RightStickY`, `LeftTrigger`, `RightTrigger`.
+
+**Mouse buttons:**
+
+```csharp
+input.Bind(MyAction.Fire,    MouseButton.Left);
+input.Bind(MyAction.ZoomIn,  MouseButton.X1);
+```
+
+Available `MouseButton` values: `Left`, `Right`, `Middle`, `X1`, `X2`.
+
+**Mouse analogue axes** (frame-relative deltas, not cumulative):
+
+```csharp
+// Scroll wheel → zoom
+input.BindMouseAxis(MyAction.ZoomIn,  MouseAxis.ScrollWheel,  1f);
+input.BindMouseAxis(MyAction.ZoomOut, MouseAxis.ScrollWheel, -1f);
+```
+
+Available `MouseAxis` values: `DeltaX`, `DeltaY`, `ScrollWheel`.
+
+**Touch gestures:**
+
+```csharp
+// Automatically enables the gesture on TouchPanel
+input.BindGesture(MyAction.Fire, GestureType.Tap);
+```
+
+### Step 4: Frame lifecycle
+
+Call these at the top and bottom of `Update()`:
+
+```csharp
+input.BeginInputProcessing();   // capture this frame's state
+// ... your Update() logic ...
+input.EndInputProcessing();     // roll current into last (for edge detection)
+```
+
+### Step 5: Query actions
+
+**Digital held / pressed:**
+
+```csharp
+if (input.IsHeld(MyAction.Fire))
+    projectile.Fire();
+
+if (input.IsPressed(MyAction.Quit))   // rising-edge only: true for one frame
+    Exit();
+```
+
+`IsHeld` is true for every frame the binding is active. `IsPressed` is true only on the first frame it becomes active.
+
+**Analogue value (0 – 1 for sticks/triggers; unbounded for mouse delta):**
+
+```csharp
+float throttle = input.GetValue(MyAction.Fire);   // 0..1 from trigger or 1.0 from button
+```
+
+**2D vector from four directional actions:**
+
+```csharp
+// Works seamlessly whether the actions are bound to keys, buttons, or analogue sticks
+Vector2 move = input.GetAxis2D(MyAction.MoveLeft, MyAction.MoveRight,
+                                MyAction.MoveDown, MyAction.MoveUp);
+```
+
+### Direct positional queries (mouse & touch)
+
+These are not mapped to actions, instead use them for UI, camera look, virtual joysticks, etc.
+
+```csharp
+Point   cursor = input.GetMousePosition();     // screen-space pixel position
+Vector2 delta  = input.GetMouseDelta();        // pixels moved this frame (+X right, +Y down)
+int     scroll = input.GetMouseScrollDelta();  // +ve = scrolled up, -ve = scrolled down
+
+IReadOnlyList<TouchPoint> touches = input.GetTouches();
+foreach (var t in touches)
+{
+    // t.Id        — unique contact identifier
+    // t.Position  — screen-space position
+    // t.Delta     — movement since last frame
+    // t.State     — Pressed / Moved / Released / Invalid
+}
+```
+
+### Escape hatch
+
+If you need the raw MonoGame state beyond what the API exposes:
+
+```csharp
+KeyboardState  kb  = input.CurrentState.KeyState;
+GamePadState   pad = input.CurrentState.PadState;
+MouseState     ms  = input.CurrentState.MouseState;
+TouchCollection tc = input.CurrentState.Touches;
 ```
 
 ---
