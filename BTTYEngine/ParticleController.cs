@@ -2,8 +2,6 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace BTTYEngine
 {
@@ -18,7 +16,7 @@ namespace BTTYEngine
         VertexPositionNormalColor[] verts = new VertexPositionNormalColor[MAX_PARTICLES * 24];
         short[] indexes = new short[MAX_PARTICLES * 36];
 
-        List<Particle> Particles; 
+        Particle[] Particles;
 
         int currentParticleCount = 0;
 
@@ -35,8 +33,8 @@ namespace BTTYEngine
 
             graphicsDevice = gd;
 
-            Particles = new List<Particle>(MAX_PARTICLES);
-            for (int i = 0; i < MAX_PARTICLES; i++) Particles.Add(new Particle());
+            Particles = new Particle[MAX_PARTICLES];
+            for (int i = 0; i < MAX_PARTICLES; i++) Particles[i] = new Particle();
 
             drawEffect = new BasicEffect(gd)
             {
@@ -47,26 +45,29 @@ namespace BTTYEngine
 
         public void Update(GameTime gameTime, ICamera gameCamera, VoxelWorld gameWorld)
         {
-            
-            foreach (Particle p in Particles.Where(part => part.Active))
+            int activeCount = 0;
+            for (int i = 0; i < MAX_PARTICLES; i++)
             {
+                Particle p = Particles[i];
+                if (!p.Active) continue;
                 p.Update(gameTime, gameWorld);
+                activeCount++;
             }
+            currentParticleCount = activeCount;
 
             updateTime += gameTime.ElapsedGameTime.TotalMilliseconds;
             if (updateTime >= updateTargetTime)
             {
                 updateTime = 0;
-
                 parts = 0;
-                foreach (Particle p in Particles.Where(part => part.Active))
+                for (int i = 0; i < MAX_PARTICLES; i++)
                 {
+                    Particle p = Particles[i];
+                    if (!p.Active) continue;
                     ParticleCube.Create(ref verts, ref indexes, p.Position, parts, p.Scale / 2, p.Color);
                     parts++;
                 }
             }
-
-            currentParticleCount = Particles.Count(part => part.Active);
 
             drawEffect.World = gameCamera.WorldMatrix;
             drawEffect.View = gameCamera.ViewMatrix;
@@ -100,8 +101,25 @@ namespace BTTYEngine
 
         public void Spawn(Vector3 pos, Vector3 speed, float scale, Color col, double life, bool gravity)
         {
-            Particle p = Particles.FirstOrDefault(part => !part.Active);
-            if (p == null) p = Particles.OrderByDescending(part => part.Time).First();
+            // Find first inactive slot; fall back to the oldest active particle.
+            Particle p = null;
+            Particle oldest = null;
+            double oldestTime = -1.0;
+            for (int i = 0; i < MAX_PARTICLES; i++)
+            {
+                Particle candidate = Particles[i];
+                if (!candidate.Active)
+                {
+                    p = candidate;
+                    break;
+                }
+                if (candidate.Time > oldestTime)
+                {
+                    oldestTime = candidate.Time;
+                    oldest = candidate;
+                }
+            }
+            if (p == null) p = oldest;
             p.Spawn(pos, speed, scale, col, life, gravity);
         }
 
@@ -110,7 +128,7 @@ namespace BTTYEngine
 
         internal void Reset()
         {
-            foreach (Particle p in Particles) p.Active = false;
+            for (int i = 0; i < MAX_PARTICLES; i++) Particles[i].Active = false;
         }
     }
 }

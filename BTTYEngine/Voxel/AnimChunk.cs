@@ -96,7 +96,6 @@ namespace BTTYEngine
 
             Vertices.Clear();
             Indexes.Clear();
-            GC.Collect();
             Updated = false;
         }
 
