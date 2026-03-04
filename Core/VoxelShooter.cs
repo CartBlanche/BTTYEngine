@@ -305,9 +305,9 @@ namespace VoxelShooter
                         if (c == null) continue;
                         if (!c.Visible) continue;
 
-                        if (c == null || c.VertexArray==null || c.VertexArray.Length == 0) continue;
+                        if (c == null || c.VertexArray == null || c.QuadCount == 0) continue;
                         if (!cameraManager.BoundingFrustum.Intersects(c.boundingSphere)) continue;
-                        GraphicsDevice.DrawUserIndexedPrimitives<VertexPositionNormalColor>(PrimitiveType.TriangleList, c.VertexArray, 0, c.VertexArray.Length, c.IndexArray, 0, c.VertexArray.Length / 2);
+                        GraphicsDevice.DrawUserIndexedPrimitives<VertexPositionNormalColor>(PrimitiveType.TriangleList, c.VertexArray, 0, c.QuadCount * 4, c.IndexArray, 0, c.QuadCount * 2);
                     }
                 }
             }

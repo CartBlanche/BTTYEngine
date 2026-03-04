@@ -28,6 +28,7 @@ namespace BTTYEngine
         private static readonly VertexPositionNormalColor[] _scratchVerts   = new VertexPositionNormalColor[MAX_QUADS * 4];
         private static readonly short[]                     _scratchIndexes = new short[MAX_QUADS * 6];
         private int _quadCount;
+        public  int QuadCount => _quadCount;
 
         // Neighbour chunk references cached at the start of each UpdateMesh call.
         // Eliminates repeated parentWorld.Chunks[worldX±1,...] array lookups during mesh building.
@@ -112,11 +113,13 @@ namespace BTTYEngine
                         if (!IsVoxelAt(x, y + 1, z)) MakeQuad(worldOffset, new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, -Voxel.HALF_SIZE), new Vector3(-Voxel.HALF_SIZE, -Voxel.HALF_SIZE, Voxel.HALF_SIZE), new Vector3(0f, -1f, 0f),  CalcLighting(x, y + 1, z, v.SR, v.SG, v.SB));
                     }
 
-            // Slice the scratch buffers down to exactly what was produced.
+            // Copy scratch buffers into instance arrays, reallocating only when capacity is exceeded.
             int vertCount = _quadCount * 4;
             int idxCount  = _quadCount * 6;
-            VertexArray = new VertexPositionNormalColor[vertCount];
-            IndexArray  = new short[idxCount];
+            if (VertexArray == null || VertexArray.Length < vertCount)
+                VertexArray = new VertexPositionNormalColor[vertCount];
+            if (IndexArray == null || IndexArray.Length < idxCount)
+                IndexArray = new short[idxCount];
             Array.Copy(_scratchVerts,   VertexArray, vertCount);
             Array.Copy(_scratchIndexes, IndexArray,  idxCount);
 
