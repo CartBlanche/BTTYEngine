@@ -103,23 +103,25 @@ namespace VoxelShooter
                 {
                     if (Spawns[i].Properties.Contains("IsWave"))
                     {
+                        int spawnY = gameWorld.Y_SIZE - 1 - Spawns[i].Location.Center.Y;
                         Wave w;
                         switch (Spawns[i].Properties["IsWave"])
                         {
                             case "Line":
-                                w = new Wave(gameWorld.ToScreenSpace(Spawns[i].Location.Center.X, Spawns[i].Location.Center.Y, 10), WaveType.Line, (EnemyType)Enum.Parse(typeof(EnemyType), Spawns[i].Name), Convert.ToInt16(Spawns[i].Properties["Count"]), Spawns[i].Properties);
-                                
+                                w = new Wave(gameWorld.ToScreenSpace(Spawns[i].Location.Center.X, spawnY, 10), WaveType.Line, (EnemyType)Enum.Parse(typeof(EnemyType), Spawns[i].Name), Convert.ToInt16(Spawns[i].Properties["Count"]), Spawns[i].Properties);
+
                                 break;
                             default:
-                                w = new Wave(gameWorld.ToScreenSpace(Spawns[i].Location.Center.X, Spawns[i].Location.Center.Y, 10), WaveType.Circle, (EnemyType)Enum.Parse(typeof(EnemyType), Spawns[i].Name), Convert.ToInt16(Spawns[i].Properties["Count"]), Spawns[i].Properties);
-                                
+                                w = new Wave(gameWorld.ToScreenSpace(Spawns[i].Location.Center.X, spawnY, 10), WaveType.Circle, (EnemyType)Enum.Parse(typeof(EnemyType), Spawns[i].Name), Convert.ToInt16(Spawns[i].Properties["Count"]), Spawns[i].Properties);
+
                                 break;
                         }
                         Waves.Add(w);
                     }
                     else
                     {
-                        Spawn((EnemyType)Enum.Parse(typeof(EnemyType), Spawns[i].Name), gameWorld.ToScreenSpace(Spawns[i].Location.Center.X, Spawns[i].Location.Center.Y, 10), Spawns[i].Properties);
+                        int spawnY = gameWorld.Y_SIZE - 1 - Spawns[i].Location.Center.Y;
+                        Spawn((EnemyType)Enum.Parse(typeof(EnemyType), Spawns[i].Name), gameWorld.ToScreenSpace(Spawns[i].Location.Center.X, spawnY, 10), Spawns[i].Properties);
                     }
                     Spawns.RemoveAt(i);
                 }

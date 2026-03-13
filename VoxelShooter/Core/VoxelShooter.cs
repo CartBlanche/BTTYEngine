@@ -122,14 +122,14 @@ namespace VoxelShooter
 
             for(int yy=0;yy<11;yy++)
                 for(int xx=0;xx<12;xx++)
-                    if(tileLayer.Tiles[xx,yy]!=null) gameWorld.CopySprite(xx*Chunk.X_SIZE, yy*Chunk.Y_SIZE, 0, tilesSprite.AnimChunks[tileLayer.Tiles[xx,yy].Index-1]);
+                    if(tileLayer.Tiles[xx,yy]!=null) gameWorld.CopySprite(xx*Chunk.X_SIZE, (10-yy)*Chunk.Y_SIZE, 0, tilesSprite.AnimChunks[tileLayer.Tiles[xx,yy].Index-1]);
 
             gameWorld.UpdateWorldMeshes();
 
             scrollColumn = 12;
 
             sideCamera          = new SideScrollingCamera(GraphicsDevice, GraphicsDevice.Viewport);
-            sideCamera.Position = new Vector3(0f, -(gameWorld.Y_SIZE * Voxel.HALF_SIZE), 0f);
+            sideCamera.Position = new Vector3(0f, gameWorld.Y_SIZE * Voxel.HALF_SIZE, 0f);
             sideCamera.Target   = sideCamera.Position;
 
             isoCamera           = new IsometricCamera(GraphicsDevice, GraphicsDevice.Viewport);
@@ -207,7 +207,7 @@ namespace VoxelShooter
             for (int yy = 0; yy < 11; yy++)
                 for (int xx = 0; xx < 12; xx++)
                     if (tileLayer.Tiles[xx, yy] != null)
-                        gameWorld.CopySprite(xx * Chunk.X_SIZE, yy * Chunk.Y_SIZE, 0, tilesSprite.AnimChunks[tileLayer.Tiles[xx, yy].Index - 1]);
+                        gameWorld.CopySprite(xx * Chunk.X_SIZE, (10 - yy) * Chunk.Y_SIZE, 0, tilesSprite.AnimChunks[tileLayer.Tiles[xx, yy].Index - 1]);
             gameWorld.UpdateWorldMeshes();
 
             // Reset level-scroll state back to the beginning.
@@ -217,7 +217,7 @@ namespace VoxelShooter
             scrollColumn = 12;
 
             // Snap all cameras back to the world start position.
-            Vector3 camStart = new Vector3(0f, -(gameWorld.Y_SIZE * Voxel.HALF_SIZE), 0f);
+            Vector3 camStart = new Vector3(0f, gameWorld.Y_SIZE * Voxel.HALF_SIZE, 0f);
             cameraManager.Position = camStart;
             cameraManager.Target   = camStart;
 
@@ -318,7 +318,7 @@ namespace VoxelShooter
 
             if (Helper.Random.Next(10) == 1)
             {
-                Vector3 pos = new Vector3(100f, -(gameWorld.Y_SIZE * Voxel.HALF_SIZE) + (-50f+((float)Helper.Random.NextDouble()*100f)), 5f + ((float)Helper.Random.NextDouble()*10f));
+                Vector3 pos = new Vector3(100f, (gameWorld.Y_SIZE * Voxel.HALF_SIZE) + (-50f+((float)Helper.Random.NextDouble()*100f)), 5f + ((float)Helper.Random.NextDouble()*10f));
                 Vector3 col = (Vector3.One * 0.5f) + (Vector3.One*((float)Helper.Random.NextDouble()*0.5f));
                 if(scrollSpeed>0f) gameStarfield.Spawn(pos, new Vector3((-0.1f-((float)Helper.Random.NextDouble()*1f)) * 5f, 0f, 0f), 0.5f, new Color(col), 20000, false);
             }
@@ -333,7 +333,7 @@ namespace VoxelShooter
                 {
                     scrollDist = 0f;
                     for (int yy = 0; yy < 11; yy++)
-                        if (tileLayer.Tiles[scrollColumn, yy] != null) gameWorld.CopySprite(scrollColumn * Chunk.X_SIZE, yy * Chunk.Y_SIZE, 0, tilesSprite.AnimChunks[tileLayer.Tiles[scrollColumn, yy].Index - 1]);
+                        if (tileLayer.Tiles[scrollColumn, yy] != null) gameWorld.CopySprite(scrollColumn * Chunk.X_SIZE, (10 - yy) * Chunk.Y_SIZE, 0, tilesSprite.AnimChunks[tileLayer.Tiles[scrollColumn, yy].Index - 1]);
                     scrollColumn++;
                 }
             }
@@ -414,17 +414,20 @@ namespace VoxelShooter
             {
                 pass.Apply();
 
-                for (int y = 0; y < gameWorld.Y_CHUNKS; y++)
+                for (int z = 0; z < gameWorld.Z_CHUNKS; z++)
                 {
-                    for (int x = 0; x < gameWorld.X_CHUNKS; x++)
+                    for (int y = 0; y < gameWorld.Y_CHUNKS; y++)
                     {
-                        Chunk c = gameWorld.Chunks[x, y, 0];
-                        if (c == null) continue;
-                        if (!c.Visible) continue;
+                        for (int x = 0; x < gameWorld.X_CHUNKS; x++)
+                        {
+                            Chunk c = gameWorld.Chunks[x, y, z];
+                            if (c == null) continue;
+                            if (!c.Visible) continue;
 
-                        if (c == null || c.VertexArray == null || c.QuadCount == 0) continue;
-                        if (!cameraManager.BoundingFrustum.Intersects(c.boundingSphere)) continue;
-                        GraphicsDevice.DrawUserIndexedPrimitives<VertexPositionNormalColor>(PrimitiveType.TriangleList, c.VertexArray, 0, c.QuadCount * 4, c.IndexArray, 0, c.QuadCount * 2);
+                            if (c.VertexArray == null || c.QuadCount == 0) continue;
+                            if (!cameraManager.BoundingFrustum.Intersects(c.boundingSphere)) continue;
+                            GraphicsDevice.DrawUserIndexedPrimitives<VertexPositionNormalColor>(PrimitiveType.TriangleList, c.VertexArray, 0, c.QuadCount * 4, c.IndexArray, 0, c.QuadCount * 2);
+                        }
                     }
                 }
             }

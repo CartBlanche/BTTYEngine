@@ -59,7 +59,7 @@ namespace VoxelShooter
 
         public Hero()
         {
-            Position = new Vector3(-150f, -45f, 5f);
+            Position = new Vector3(-150f, 45f, 5f);
         }
 
         public void LoadContent(ContentManager content, GraphicsDevice gd)
@@ -401,7 +401,7 @@ namespace VoxelShooter
         public void ResetForRestart(PhysicsManager physics, float health)
         {
             DestroyPhysics(physics);
-            Position       = new Vector3(-150f, -45f, 5f);
+            Position       = new Vector3(-150f, 45f, 5f);
             Speed          = Vector3.Zero;
             Health         = health;
             XP             = 0f;
