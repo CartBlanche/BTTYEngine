@@ -69,7 +69,7 @@ namespace BTTYEngine
             worldY = wy;
             worldZ = wz;
 
-            boundingSphere = new BoundingSphere(new Vector3(worldX * (X_SIZE * Voxel.SIZE), -(worldY * (Y_SIZE * Voxel.SIZE)), worldZ * (Z_SIZE * Voxel.SIZE)) + (new Vector3(X_SIZE * Voxel.SIZE, -(Y_SIZE * Voxel.SIZE), Z_SIZE * Voxel.SIZE) / 2f), (X_SIZE * Voxel.SIZE));
+            boundingSphere = new BoundingSphere(new Vector3(worldX * (X_SIZE * Voxel.SIZE), worldY * (Y_SIZE * Voxel.SIZE), worldZ * (Z_SIZE * Voxel.SIZE)) + (new Vector3(X_SIZE * Voxel.SIZE, Y_SIZE * Voxel.SIZE, Z_SIZE * Voxel.SIZE) / 2f), (X_SIZE * Voxel.SIZE));
 
             if (createGround)
             {
@@ -111,7 +111,7 @@ namespace BTTYEngine
 
             // Pre-compute the per-chunk world-space origin once outside all loops.
             float baseX =  worldX * (X_SIZE * Voxel.SIZE);
-            float baseY = -(worldY * (Y_SIZE * Voxel.SIZE));
+            float baseY = worldY * (Y_SIZE * Voxel.SIZE);
             float baseZ =  worldZ * (Z_SIZE * Voxel.SIZE);
 
             for (int z = Z_SIZE - 1; z >= 0; z--)
@@ -121,14 +121,14 @@ namespace BTTYEngine
                         ref Voxel v = ref Voxels[x, y, z];
                         if (!v.Active) continue;
 
-                        Vector3 worldOffset = new Vector3(baseX + x * Voxel.SIZE, baseY - y * Voxel.SIZE, baseZ + z * Voxel.SIZE);
+                        Vector3 worldOffset = new Vector3(baseX + x * Voxel.SIZE, baseY + y * Voxel.SIZE, baseZ + z * Voxel.SIZE);
 
                         if (!IsVoxelAt(x, y, z - 1)) MakeQuad(worldOffset, nnn, pnn, ppn, npn, normNZ, CalcLighting(x, y, z,     v.TR, v.TG, v.TB));
                         if (!IsVoxelAt(x, y, z + 1)) MakeQuad(worldOffset, ppp, pnp, nnp, npp, normPZ, CalcLighting(x, y, z,     v.TR, v.TG, v.TB));
                         if (!IsVoxelAt(x - 1, y, z)) MakeQuad(worldOffset, nnn, npn, npp, nnp, normNX, CalcLighting(x - 1, y, z, v.SR, v.SG, v.SB));
                         if (!IsVoxelAt(x + 1, y, z)) MakeQuad(worldOffset, ppp, ppn, pnn, pnp, normPX, CalcLighting(x + 1, y, z, v.SR, v.SG, v.SB));
-                        if (!IsVoxelAt(x, y - 1, z)) MakeQuad(worldOffset, npn, ppn, ppp, npp, normPY, CalcLighting(x, y - 1, z, v.TR, v.TG, v.TB));
-                        if (!IsVoxelAt(x, y + 1, z)) MakeQuad(worldOffset, pnp, pnn, nnn, nnp, normNY, CalcLighting(x, y + 1, z, v.SR, v.SG, v.SB));
+                        if (!IsVoxelAt(x, y + 1, z)) MakeQuad(worldOffset, npn, ppn, ppp, npp, normPY, CalcLighting(x, y + 1, z, v.TR, v.TG, v.TB));
+                        if (!IsVoxelAt(x, y - 1, z)) MakeQuad(worldOffset, pnp, pnn, nnn, nnp, normNY, CalcLighting(x, y - 1, z, v.SR, v.SG, v.SB));
                     }
 
             // Copy scratch buffers into instance arrays, reallocating only when capacity is exceeded.
@@ -156,7 +156,7 @@ namespace BTTYEngine
                         if (!src.Active) continue;
 
                         int dx = x + xx;
-                        int dy = y + ((c.Z_SIZE - 1) - zz);
+                        int dy = y + zz;
                         int dz = z + yy;
                         if (dx < 0 || dy < 0 || dz < 0 || dx >= X_SIZE || dy >= Y_SIZE || dz >= Z_SIZE) continue;
 

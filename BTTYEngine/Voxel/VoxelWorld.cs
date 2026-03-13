@@ -61,31 +61,21 @@ namespace BTTYEngine
                 }
             }
 
-            for (int y = 0; y < Y_CHUNKS; y++)
+            for (int z = 0; z < Z_CHUNKS; z++)
             {
-                for (int x = 0; x < X_CHUNKS; x++)
+                for (int y = 0; y < Y_CHUNKS; y++)
                 {
-                    Chunk c = Chunks[x, y, 0];
-                    if (c == null) continue;
-                    if (!gameCamera.BoundingFrustum.Intersects(c.boundingSphere))
+                    for (int x = 0; x < X_CHUNKS; x++)
                     {
-                        if (c.Visible)
+                        Chunk c = Chunks[x, y, z];
+                        if (c == null) continue;
+                        if (!gameCamera.BoundingFrustum.Intersects(c.boundingSphere))
                         {
-                            if (c.worldX * Chunk.X_SIZE * Voxel.SIZE < gameCamera.Position.X)
-                            {
-                                Chunks[x,y,0]=null;
-                            }
-                            else c.Visible = false;
-                            //c.ClearMem();
+                            if (c.Visible) c.Visible = false;
                         }
-                    }
-                    else
-                    {
-                        if (!c.Visible)
+                        else
                         {
-                            c.Visible = true;
-                            //if (c.Updated) c.UpdateMesh();
-                            //c.UpdateMesh();
+                            if (!c.Visible) c.Visible = true;
                         }
                     }
                 }
@@ -124,14 +114,14 @@ namespace BTTYEngine
 
         public Vector3 FromScreenSpace(Vector3 screen)
         {
-            Vector3 vox = new Vector3(screen.X / Voxel.SIZE, -(screen.Y / Voxel.SIZE), screen.Z / Voxel.SIZE);
+            Vector3 vox = new Vector3(screen.X / Voxel.SIZE, screen.Y / Voxel.SIZE, screen.Z / Voxel.SIZE);
 
             return vox;
         }
 
         public Vector3 ToScreenSpace(int x, int y, int z)
         {
-            Vector3 screen = new Vector3(x * Voxel.SIZE, -(y * Voxel.SIZE), z * Voxel.SIZE);
+            Vector3 screen = new Vector3(x * Voxel.SIZE, y * Voxel.SIZE, z * Voxel.SIZE);
 
             return screen;
         }
@@ -146,7 +136,7 @@ namespace BTTYEngine
                     {
                         if (c.Voxels[xx, yy, zz].Active)
                         {
-                            SetVoxel(x + xx, y + ((c.Z_SIZE - 1) - zz), z + yy, true, 1, VoxelType.Prefab, c.Voxels[xx, yy, zz].Color, new Color(c.Voxels[xx, yy, zz].Color.ToVector3() * 0.5f));
+                            SetVoxel(x + xx, y + zz, z + yy, true, 1, VoxelType.Prefab, c.Voxels[xx, yy, zz].Color, new Color(c.Voxels[xx, yy, zz].Color.ToVector3() * 0.5f));
                         }
                     }
                 }
