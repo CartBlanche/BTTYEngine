@@ -2,7 +2,6 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 using BTTYEngine;
@@ -61,11 +60,20 @@ namespace VoxelShooter
             {
                 case ProjectileType.Rocket:
                     
-                    foreach(Enemy e in EnemyController.Instance.Enemies.OrderBy(en => Vector3.Distance(en.Position,Position)))
                     {
-                        if (e.Position.X < scrollPos - 75f || !e.Active) continue;
-                        target = e;
-                        break;
+                        Enemy nearest = null;
+                        float nearestDistSq = float.MaxValue;
+                        var enemies = EnemyController.Instance.Enemies;
+                        for (int ei = 0; ei < enemies.Count; ei++)
+                        {
+                            Enemy e = enemies[ei];
+                            if (!e.Active || e.Position.X < scrollPos - 75f) continue;
+                            float dx = e.Position.X - Position.X;
+                            float dy = e.Position.Y - Position.Y;
+                            float distSq = dx * dx + dy * dy;
+                            if (distSq < nearestDistSq) { nearestDistSq = distSq; nearest = e; }
+                        }
+                        target = nearest;
                     }
                     
                     if(target!=null)
@@ -143,8 +151,22 @@ namespace VoxelShooter
                                 if(Type== ProjectileType.Rocket) ParticleController.Instance.SpawnExplosion(Position);
                             }
 
-                        if(Owner is Hero)
-                            foreach (Enemy e in EnemyController.Instance.Enemies.Where(en => en.Active)) { if (e.boundingSphere.Contains(Position + (d * ((Position + Speed) - Position))) == ContainmentType.Contains) { e.DoHit(Position + (d * ((Position + Speed) - Position)), Speed, Damage); Active = false; if (Type == ProjectileType.Rocket) ParticleController.Instance.SpawnExplosion(Position); } }
+                        if (Owner is Hero)
+                        {
+                            var enList = EnemyController.Instance.Enemies;
+                            Vector3 checkPoint = Position + (d * ((Position + Speed) - Position));
+                            for (int ei = 0; ei < enList.Count; ei++)
+                            {
+                                Enemy e = enList[ei];
+                                if (!e.Active) continue;
+                                if (e.boundingSphere.Contains(checkPoint) == ContainmentType.Contains)
+                                {
+                                    e.DoHit(checkPoint, Speed, Damage);
+                                    Active = false;
+                                    if (Type == ProjectileType.Rocket) ParticleController.Instance.SpawnExplosion(Position);
+                                }
+                            }
+                        }
 
                         
                     }

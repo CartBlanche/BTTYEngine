@@ -4,7 +4,6 @@ using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 
 using BTTYEngine;
@@ -21,6 +20,8 @@ namespace VoxelShooter
         BasicEffect drawEffect;
 
         VoxelSprite projectileStrip;
+
+        static readonly Matrix _rotX90 = Matrix.CreateRotationX(MathHelper.PiOver2);
 
         public ProjectileController(GraphicsDevice gd)
         {
@@ -45,12 +46,15 @@ namespace VoxelShooter
 
         public void Update(GameTime gameTime, ICamera gameCamera, Hero gameHero, VoxelWorld gameWorld, float scrollPos)
         {
-            foreach (Projectile p in Projectiles.Where(proj => proj.Active))
+            int writeIdx = 0;
+            for (int i = 0; i < Projectiles.Count; i++)
             {
+                Projectile p = Projectiles[i];
+                if (!p.Active) continue;
                 p.Update(gameTime, gameHero, gameWorld, scrollPos);
+                if (p.Active) Projectiles[writeIdx++] = p;
             }
-
-            Projectiles.RemoveAll(proj => !proj.Active);
+            while (Projectiles.Count > writeIdx) Projectiles.RemoveAt(Projectiles.Count - 1);
 
             drawEffect.World      = gameCamera.WorldMatrix;
             drawEffect.View       = gameCamera.ViewMatrix;
@@ -62,41 +66,37 @@ namespace VoxelShooter
 
         public void Draw(ICamera gameCamera)
         {
-            foreach (Projectile p in Projectiles.Where(proj => proj.Type == ProjectileType.Laser1 || proj.Type == ProjectileType.Laser2 || proj.Type == ProjectileType.Laser3 || proj.Type == ProjectileType.Laser4))
+            for (int i = 0; i < Projectiles.Count; i++)
             {
-                //drawEffect.Alpha = 0.5f;
-                drawEffect.World = gameCamera.WorldMatrix *
-                                   Matrix.CreateRotationX(MathHelper.PiOver2) *
-                                   //Matrix.CreateRotationZ(-MathHelper.PiOver2) *
-                                   p.Rotation *
-                                   //Matrix.CreateScale(0.5f) *
-                                   Matrix.CreateTranslation(p.Position);
-                foreach (EffectPass pass in drawEffect.CurrentTechnique.Passes)
+                Projectile p = Projectiles[i];
+                if (p.Type == ProjectileType.Rocket)
                 {
-                    pass.Apply();
-
-                    graphicsDevice.DrawUserIndexedPrimitives<VertexPositionNormalColor>(PrimitiveType.TriangleList, projectileStrip.AnimChunks[(int)p.Type].VertexArray, 0, projectileStrip.AnimChunks[(int)p.Type].VertexArray.Length, projectileStrip.AnimChunks[(int)p.Type].IndexArray, 0, projectileStrip.AnimChunks[(int)p.Type].VertexArray.Length / 2);
-
+                    drawEffect.World = gameCamera.WorldMatrix *
+                                       _rotX90 *
+                                       p.Rotation *
+                                       Matrix.CreateScale(0.5f) *
+                                       Matrix.CreateTranslation(p.Position);
+                    foreach (EffectPass pass in drawEffect.CurrentTechnique.Passes)
+                    {
+                        pass.Apply();
+                        var chunk = projectileStrip.AnimChunks[4];
+                        graphicsDevice.DrawUserIndexedPrimitives<VertexPositionNormalColor>(PrimitiveType.TriangleList, chunk.VertexArray, 0, chunk.VertexArray.Length, chunk.IndexArray, 0, chunk.VertexArray.Length / 2);
+                    }
                 }
-                //drawEffect.Alpha = 1f;
-            }
-
-            foreach (Projectile p in Projectiles.Where(proj => proj.Type == ProjectileType.Rocket))
-            {
-                drawEffect.World = gameCamera.WorldMatrix *
-                                   Matrix.CreateRotationX(MathHelper.PiOver2) *
-                                   p.Rotation *
-                                   Matrix.CreateScale(0.5f) * 
-                                   Matrix.CreateTranslation(p.Position);
-                foreach (EffectPass pass in drawEffect.CurrentTechnique.Passes)
+                else
                 {
-                    pass.Apply();
-
-                    graphicsDevice.DrawUserIndexedPrimitives<VertexPositionNormalColor>(PrimitiveType.TriangleList, projectileStrip.AnimChunks[4].VertexArray, 0, projectileStrip.AnimChunks[4].VertexArray.Length, projectileStrip.AnimChunks[4].IndexArray, 0, projectileStrip.AnimChunks[4].VertexArray.Length / 2);
-
+                    drawEffect.World = gameCamera.WorldMatrix *
+                                       _rotX90 *
+                                       p.Rotation *
+                                       Matrix.CreateTranslation(p.Position);
+                    foreach (EffectPass pass in drawEffect.CurrentTechnique.Passes)
+                    {
+                        pass.Apply();
+                        var chunk = projectileStrip.AnimChunks[(int)p.Type];
+                        graphicsDevice.DrawUserIndexedPrimitives<VertexPositionNormalColor>(PrimitiveType.TriangleList, chunk.VertexArray, 0, chunk.VertexArray.Length, chunk.IndexArray, 0, chunk.VertexArray.Length / 2);
+                    }
                 }
             }
-            
         }
 
         public void Reset()

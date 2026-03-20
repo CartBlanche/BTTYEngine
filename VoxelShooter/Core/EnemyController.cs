@@ -4,7 +4,6 @@ using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using TiledLib;
 
@@ -137,7 +136,16 @@ namespace VoxelShooter
                     if (en.Active && en.Position.X < scrollPos - 110f)
                         en.DestroyPhysics(PhysicsManager.Instance);
 
-			Enemies.RemoveAll(en => !en.Active || en.Position.X<scrollPos-110f);
+	        {
+            int wIdx = 0;
+            for (int i = 0; i < Enemies.Count; i++)
+            {
+                Enemy en = Enemies[i];
+                if (en.Active && en.Position.X >= scrollPos - 110f)
+                    Enemies[wIdx++] = en;
+            }
+            while (Enemies.Count > wIdx) Enemies.RemoveAt(Enemies.Count - 1);
+        }
 
             foreach (Wave w in Waves) w.Update(gameTime, scrollSpeed);
 
@@ -180,8 +188,10 @@ drawEffect.World      = gameCamera.WorldMatrix;
 
 			}
 
-            foreach (Enemy e in Enemies.Where(en => en is Turret))
+            for (int i = 0; i < Enemies.Count; i++)
             {
+                if (!(Enemies[i] is Turret)) continue;
+                Enemy e = Enemies[i];
                 Turret t = (Turret)e;
                 drawEffect.DiffuseColor = new Vector3(1f, 1f - e.hitAlpha, 1f - e.hitAlpha);
                 drawEffect.Alpha = 1f;

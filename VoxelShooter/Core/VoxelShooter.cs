@@ -117,6 +117,14 @@ namespace VoxelShooter
 
         Texture2D hudTex;
 
+        // HUD string caches — rebuilt only when the underlying value changes
+        string _timeString   = "";
+        int    _lastMinutes  = -1;
+        string _camLabel     = "";
+        int    _lastCamIndex = -1;
+        const string _controls = "WASD/LTS  Move   SPC/RT  Fire   1-4  Camera   LB/RB  Cycle   Esc  Quit";
+        Vector2 _controlsSize;
+
         public VoxelShooterGame()
         {
             graphics = new GraphicsDeviceManager(this);
@@ -149,6 +157,7 @@ namespace VoxelShooter
 
             font = Content.Load<SpriteFont>("font");
             hudTex = Content.Load<Texture2D>("hud");
+            _controlsSize = font.MeasureString(_controls);
 
             // [MUS-BGM] bgm = Content.Load<Microsoft.Xna.Framework.Media.Song>("Music/bgm");
             // [MUS-BGM] Microsoft.Xna.Framework.Media.MediaPlayer.IsRepeating = true;
@@ -496,7 +505,6 @@ namespace VoxelShooter
                             if (!c.Visible) continue;
 
                             if (c.VertexArray == null || c.QuadCount == 0) continue;
-                            if (!cameraManager.BoundingFrustum.Intersects(c.boundingSphere)) continue;
                             GraphicsDevice.DrawUserIndexedPrimitives<VertexPositionNormalColor>(PrimitiveType.TriangleList, c.VertexArray, 0, c.QuadCount * 4, c.IndexArray, 0, c.QuadCount * 2);
                         }
                     }
@@ -527,21 +535,26 @@ namespace VoxelShooter
 
             // Lighting state indicator, top-left
             int totalMinutes = (int)(timeOfDay * 1440);
-            spriteBatch.DrawString(font, $"Time of Day: {totalMinutes/60:D2}:{totalMinutes%60:D2}",
-                new Vector2(70f, 12f),
-                Color.White * 0.85f);
+            if (totalMinutes != _lastMinutes)
+            {
+                _timeString  = $"Time of Day: {totalMinutes/60:D2}:{totalMinutes%60:D2}";
+                _lastMinutes = totalMinutes;
+            }
+            spriteBatch.DrawString(font, _timeString, new Vector2(70f, 12f), Color.White * 0.85f);
 
             // Camera indicator, bottom-left (viewport-anchored, no offset)
-            string camLabel = $"{cameraNames[activeCameraIndex]}  [{activeCameraIndex}]";
-            spriteBatch.DrawString(font, camLabel,
+            if (activeCameraIndex != _lastCamIndex)
+            {
+                _camLabel     = $"{cameraNames[activeCameraIndex]}  [{activeCameraIndex}]";
+                _lastCamIndex = activeCameraIndex;
+            }
+            spriteBatch.DrawString(font, _camLabel,
                 new Vector2(70f, GraphicsDevice.Viewport.Height - 70f),
                 Color.White * 0.85f);
 
             // Controls strip, bottom-right, small and subtle
-            string controls = "WASD/LTS  Move   SPC/RT  Fire   1-4  Camera   LB/RB  Cycle   Esc  Quit";
-            Vector2 ctrlSize = font.MeasureString(controls);
-            spriteBatch.DrawString(font, controls,
-                new Vector2(GraphicsDevice.Viewport.Width - ctrlSize.X * 0.6f - 16f,
+            spriteBatch.DrawString(font, _controls,
+                new Vector2(GraphicsDevice.Viewport.Width - _controlsSize.X * 0.6f - 16f,
                             GraphicsDevice.Viewport.Height - 60f),
                 Color.White * 0.65f,
                 0f, Vector2.Zero, 0.6f, SpriteEffects.None, 0f);

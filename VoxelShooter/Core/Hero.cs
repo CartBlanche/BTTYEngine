@@ -15,6 +15,31 @@ namespace VoxelShooter
 {
     public class Hero : BaseEntity
     {
+        // Pre-baked arc sample angles for collision sweeps — computed once, reused every frame.
+        static readonly float[] _sweepDown;
+        static readonly float[] _sweepUp;
+        static readonly float[] _sweepLeft;
+        static readonly float[] _sweepRight;
+
+        static Hero()
+        {
+            const float sweep = 0.1f;
+            const float step  = 0.02f;
+            _sweepDown  = MakeSweep(-MathHelper.PiOver2, sweep, step);
+            _sweepUp    = MakeSweep( MathHelper.PiOver2, sweep, step);
+            _sweepLeft  = MakeSweep(-MathHelper.Pi,      sweep, step);
+            _sweepRight = MakeSweep(0f,                  sweep, step);
+        }
+
+        static float[] MakeSweep(float center, float sweep, float step)
+        {
+            int count = (int)(2f * sweep / step) + 1;
+            float[] arr = new float[count];
+            float start = center - sweep;
+            for (int i = 0; i < count; i++) arr[i] = start + i * step;
+            return arr;
+        }
+
         public float XP = 0f;
         public bool Dead = false;
 
@@ -174,7 +199,10 @@ namespace VoxelShooter
 
         public void Draw(GraphicsDevice gd)
         {
-            drawEffect.World = Matrix.CreateRotationZ(bankAngle) * Matrix.CreateTranslation(Position);
+            Matrix.CreateRotationZ(bankAngle, out var _bankRot);
+            Matrix.CreateTranslation(ref Position, out var _bankTrans);
+            Matrix.Multiply(ref _bankRot, ref _bankTrans, out Matrix _bankWorld);
+            drawEffect.World = _bankWorld;
 
             drawEffect.DiffuseColor = new Vector3(1f, 1f - hitAlpha, 1f - hitAlpha);
             foreach (EffectPass pass in drawEffect.CurrentTechnique.Passes)
@@ -305,7 +333,6 @@ namespace VoxelShooter
 
         void CheckCollisions(VoxelWorld world, ICamera gameCamera)
         {
-            float radiusSweep = 0.1f;
             Vector2 v2Pos = new Vector2(Position.X, Position.Y);
             float checkHeight = Position.Z - 1f;
             Voxel checkVoxel;
@@ -313,56 +340,42 @@ namespace VoxelShooter
 
             if (tempSpeed.Y < 0f)
             {
-                for (float a = -MathHelper.PiOver2 - radiusSweep; a < -MathHelper.PiOver2 + radiusSweep; a += 0.02f)
+                for (int si = 0; si < _sweepDown.Length; si++)
                 {
-                    checkPos = new Vector3(Helper.PointOnCircle(ref v2Pos, collisionBoxSize.Y/2, a), checkHeight);
+                    checkPos = new Vector3(Helper.PointOnCircle(ref v2Pos, collisionBoxSize.Y / 2, _sweepDown[si]), checkHeight);
                     checkVoxel = world.GetVoxel(checkPos);
-                    if ((checkVoxel.Active && world.CanCollideWith(checkVoxel.Type)))
-                    {
-                        tempSpeed.Y = 0f;
-                    }
-                    if (gameCamera.BoundingFrustum.Contains(checkPos) == ContainmentType.Disjoint) tempSpeed.Y = 0;
+                    if (checkVoxel.Active && world.CanCollideWith(checkVoxel.Type)) { tempSpeed.Y = 0f; break; }
+                    if (gameCamera.BoundingFrustum.Contains(checkPos) == ContainmentType.Disjoint) { tempSpeed.Y = 0f; break; }
                 }
             }
             if (tempSpeed.Y > 0f)
             {
-                for (float a = MathHelper.PiOver2 - radiusSweep; a < MathHelper.PiOver2 + radiusSweep; a += 0.02f)
+                for (int si = 0; si < _sweepUp.Length; si++)
                 {
-                    checkPos = new Vector3(Helper.PointOnCircle(ref v2Pos, collisionBoxSize.Y / 2, a), checkHeight);
+                    checkPos = new Vector3(Helper.PointOnCircle(ref v2Pos, collisionBoxSize.Y / 2, _sweepUp[si]), checkHeight);
                     checkVoxel = world.GetVoxel(checkPos);
-                    if ((checkVoxel.Active && world.CanCollideWith(checkVoxel.Type)))
-                    {
-                        tempSpeed.Y = 0f;
-                    }
-                    if (gameCamera.BoundingFrustum.Contains(checkPos) == ContainmentType.Disjoint) tempSpeed.Y = 0;                    
+                    if (checkVoxel.Active && world.CanCollideWith(checkVoxel.Type)) { tempSpeed.Y = 0f; break; }
+                    if (gameCamera.BoundingFrustum.Contains(checkPos) == ContainmentType.Disjoint) { tempSpeed.Y = 0f; break; }
                 }
             }
             if (tempSpeed.X < 0f)
             {
-                for (float a = -MathHelper.Pi - radiusSweep; a < -MathHelper.Pi + radiusSweep; a += 0.02f)
+                for (int si = 0; si < _sweepLeft.Length; si++)
                 {
-                    checkPos = new Vector3(Helper.PointOnCircle(ref v2Pos, collisionBoxSize.X / 2, a), checkHeight);
+                    checkPos = new Vector3(Helper.PointOnCircle(ref v2Pos, collisionBoxSize.X / 2, _sweepLeft[si]), checkHeight);
                     checkVoxel = world.GetVoxel(checkPos);
-                    if ((checkVoxel.Active && world.CanCollideWith(checkVoxel.Type)))
-                    {
-                        tempSpeed.X = 0f;
-                    }
+                    if (checkVoxel.Active && world.CanCollideWith(checkVoxel.Type)) { tempSpeed.X = 0f; break; }
                     if (gameCamera.BoundingFrustum.Contains(checkPos) == ContainmentType.Disjoint) { tempSpeed.X -= Speed.X; break; }
-                    
                 }
             }
             if (tempSpeed.X > 0f)
             {
-                for (float a = -radiusSweep; a < radiusSweep; a += 0.02f)
+                for (int si = 0; si < _sweepRight.Length; si++)
                 {
-                    checkPos = new Vector3(Helper.PointOnCircle(ref v2Pos, collisionBoxSize.X / 2, a), checkHeight);
+                    checkPos = new Vector3(Helper.PointOnCircle(ref v2Pos, collisionBoxSize.X / 2, _sweepRight[si]), checkHeight);
                     checkVoxel = world.GetVoxel(checkPos);
-                    if ((checkVoxel.Active && world.CanCollideWith(checkVoxel.Type)))
-                    {
-                        tempSpeed.X = 0f;
-                    }
+                    if (checkVoxel.Active && world.CanCollideWith(checkVoxel.Type)) { tempSpeed.X = 0f; break; }
                     if (gameCamera.BoundingFrustum.Contains(checkPos) == ContainmentType.Disjoint) { tempSpeed.X -= Speed.X; break; }
-                    
                 }
             }
         }

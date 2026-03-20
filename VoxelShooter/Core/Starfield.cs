@@ -2,7 +2,6 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 using BTTYEngine;
@@ -55,10 +54,15 @@ namespace VoxelShooter
         public void Update(GameTime gameTime, ICamera gameCamera, VoxelWorld gameWorld, float scrollSpeed)
         {
             
-            foreach (Particle p in Particles.Where(part => part.Active))
+            int activeCount = 0;
+            for (int i = 0; i < Particles.Count; i++)
             {
+                Particle p = Particles[i];
+                if (!p.Active) continue;
                 p.UpdateStarField(gameTime, gameWorld, scrollSpeed);
+                activeCount++;
             }
+            currentParticleCount = activeCount;
 
             updateTime += gameTime.ElapsedGameTime.TotalMilliseconds;
             if (updateTime >= updateTargetTime)
@@ -66,14 +70,14 @@ namespace VoxelShooter
                 updateTime = 0;
 
                 parts = 0;
-                foreach (Particle p in Particles.Where(part => part.Active))
+                for (int i = 0; i < Particles.Count; i++)
                 {
+                    Particle p = Particles[i];
+                    if (!p.Active) continue;
                     ParticleCube.Create(ref verts, ref indexes, p.Position, parts, p.Scale / 2, p.Color);
                     parts++;
                 }
             }
-
-            currentParticleCount = Particles.Count(part => part.Active);
 
             //drawEffect.World = Matrix.Identity;
             //drawEffect.View = gameCamera.viewMatrix;
@@ -93,8 +97,16 @@ namespace VoxelShooter
 
         public void Spawn(Vector3 pos, Vector3 speed, float scale, Color col, double life, bool gravity)
         {
-            Particle p = Particles.FirstOrDefault(part => !part.Active);
-            if (p == null) p = Particles.OrderByDescending(part => part.Time).First();
+            Particle p = null;
+            Particle oldest = null;
+            double oldestTime = -1.0;
+            for (int i = 0; i < Particles.Count; i++)
+            {
+                Particle candidate = Particles[i];
+                if (!candidate.Active) { p = candidate; break; }
+                if (candidate.Time > oldestTime) { oldestTime = candidate.Time; oldest = candidate; }
+            }
+            if (p == null) p = oldest;
             p.Spawn(pos, speed, scale, col, life, gravity);
         }
 
