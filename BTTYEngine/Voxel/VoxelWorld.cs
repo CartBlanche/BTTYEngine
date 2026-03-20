@@ -31,6 +31,7 @@ namespace BTTYEngine
         double redrawTime = 0;
 
         Queue<Chunk> updateQueue = new Queue<Chunk>();
+        HashSet<Chunk> _inQueue  = new HashSet<Chunk>();
 
         public VoxelWorld()
         {
@@ -67,6 +68,7 @@ namespace BTTYEngine
                     {
                         redrawTime = 0;
                         Chunk uC = updateQueue.Dequeue();
+                        _inQueue.Remove(uC);
                         uC.UpdateMesh();
                     }
                 }
@@ -277,11 +279,8 @@ namespace BTTYEngine
 
         void AddToUpdateQueue(Chunk c)
         {
-            if (c == null) return;
+            if (c == null || !_inQueue.Add(c)) return;
             c.Updated = true;
-
-            foreach (Chunk cc in updateQueue) if (cc == c) return;
-
             updateQueue.Enqueue(c);
         }
     }
