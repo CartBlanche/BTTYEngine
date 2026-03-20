@@ -10,18 +10,13 @@ using BTTYEngine;
 
 namespace VoxelShooter
 {
-    public class Enemy : IEntity
+    public class Enemy : BaseEntity
     {
         public EnemyType Type;
 
-        public Vector3 Position;
-        public Vector3 Speed;
         public Vector3 Rotation;
-        public float Health = 100f;
 
         public float Scale = 1f;
-
-        public bool Active = true;
 
         public int CurrentFrame = 0;
 
@@ -34,12 +29,7 @@ namespace VoxelShooter
 
         public BoundingSphere boundingSphere = new BoundingSphere();
 
-        public float hitAlpha = 0f;
-
         // [SFX-EXPLODE] public static Microsoft.Xna.Framework.Audio.SoundEffect SfxExplosion;
-
-        protected BodyHandle _physicsBody;
-        protected bool _physicsInitialized;
 
         public double attackRate = 1000;
         public double currentAttackTime = 0;
@@ -52,42 +42,7 @@ namespace VoxelShooter
             spriteSheet = sprite;
         }
 
-        public virtual void InitPhysics(PhysicsManager physics)
-        {
-            var sphere = new Sphere(3f);
-            var inertia = sphere.ComputeInertia(1f);
-            inertia.InverseInertiaTensor = default; // lock rotation
-            var shapeIndex = physics.Simulation.Shapes.Add(sphere);
-            _physicsBody = physics.Simulation.Bodies.Add(
-                BodyDescription.CreateDynamic(
-                    new RigidPose(new System.Numerics.Vector3(Position.X, Position.Y, Position.Z)),
-                    new BodyVelocity(),
-                    inertia,
-                    new CollidableDescription(shapeIndex, 0.1f),
-                    new BodyActivityDescription(0.01f)));
-            EntityRegistry.Instance.Register(_physicsBody, this);
-            _physicsInitialized = true;
-        }
-
-        public void DestroyPhysics(PhysicsManager physics)
-        {
-            if (!_physicsInitialized) return;
-            EntityRegistry.Instance.Unregister(_physicsBody);
-            physics.Simulation.Bodies.Remove(_physicsBody);
-            _physicsInitialized = false;
-        }
-
-        // Called after Wave.Update() assigns e.Position directly, to keep the Bepu body in sync.
-        public void SyncPhysicsToPosition()
-        {
-            if (!_physicsInitialized) return;
-            if (float.IsNaN(Position.X) || float.IsNaN(Position.Y) || float.IsNaN(Position.Z)) return;
-            var body = PhysicsManager.Instance.Simulation.Bodies.GetBodyReference(_physicsBody);
-            body.Pose.Position = new System.Numerics.Vector3(Position.X, Position.Y, Position.Z);
-            body.Awake = true;
-        }
-
-        public virtual void OnCollision(IEntity other)
+        public override void OnCollision(IEntity other)
         {
             if (other is Hero hero)
                 hero.DoHit(Position, null);

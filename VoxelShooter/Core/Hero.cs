@@ -13,12 +13,8 @@ using BTTYEngine;
 
 namespace VoxelShooter
 {
-    public class Hero : IEntity
+    public class Hero : BaseEntity
     {
-        public Vector3 Position;
-        public Vector3 Speed;
-
-        public float Health = 100f;
         public float XP = 0f;
         public bool Dead = false;
 
@@ -37,7 +33,6 @@ namespace VoxelShooter
 
         double fireCooldown = 0;
         double rocketCooldown = 0;
-        public float hitAlpha = 0f;
         double hitImmunityMs = 0;
         Vector3 knockback;
 
@@ -54,8 +49,6 @@ namespace VoxelShooter
 
         public float[] xpLevels = new float[] { 6f, 18f, 40f, 68f, 100f };
         //public float[] xpLevels = new float[] { 1f, 3f, 5f, 8f, 10f };
-
-        BodyHandle physicsBody;
 
         public Hero()
         {
@@ -82,35 +75,12 @@ namespace VoxelShooter
             // [SFX-POWERUP] sfxPowerup = content.Load<SoundEffect>("Sound/powerup");
         }
 
-        public void InitPhysics(PhysicsManager physics)
-        {
-            var sphere = new Sphere(3f);
-            var inertia = sphere.ComputeInertia(1f);
-            inertia.InverseInertiaTensor = default; // zero = locked rotation (no tumbling)
-            var shapeIndex = physics.Simulation.Shapes.Add(sphere);
-            physicsBody = physics.Simulation.Bodies.Add(
-                BodyDescription.CreateDynamic(
-                    new RigidPose(new System.Numerics.Vector3(Position.X, Position.Y, Position.Z)),
-                    new BodyVelocity(),
-                    inertia,
-                    new CollidableDescription(shapeIndex, 0.1f),
-                    new BodyActivityDescription(0.01f)));
-            EntityRegistry.Instance.Register(physicsBody, this);
-        }
-
-        public void DestroyPhysics(PhysicsManager physics)
-        {
-            EntityRegistry.Instance.Unregister(physicsBody);
-            physics.Simulation.Bodies.Remove(physicsBody);
-        }
-
-        // Damage is applied by the enemy's OnCollision calling hero.DoHit.
-        public void OnCollision(IEntity other) { }
+        public override void OnCollision(IEntity other) { }
 
         public void Update(GameTime gameTime, ICamera gameCamera, VoxelWorld gameWorld, float scrollSpeed)
         {
             // Read authoritative position from Bepu (already stepped this frame in VoxelShooter.Update).
-            var body = PhysicsManager.Instance.Simulation.Bodies.GetBodyReference(physicsBody);
+            var body = PhysicsManager.Instance.Simulation.Bodies.GetBodyReference(_physicsBody);
             var bpos = body.Pose.Position;
             Position = new Microsoft.Xna.Framework.Vector3(bpos.X, bpos.Y, bpos.Z);
 
@@ -133,7 +103,6 @@ namespace VoxelShooter
                 body.Velocity.Linear = new System.Numerics.Vector3(vel.X, vel.Y, vel.Z);
                 body.Awake = true;
             }
-
             if(Helper.Random.Next(3)==1)
                 ParticleController.Instance.Spawn(Position + new Vector3(-4f, 0f, 0f),
                                               new Vector3(Helper.RandomFloat(-0.5f, -0.3f), Helper.RandomFloat(-0.05f, 0.05f), 0f),
