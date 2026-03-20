@@ -19,6 +19,42 @@ namespace VoxelShooter
     /// </summary>
     public class VoxelShooterGame : Microsoft.Xna.Framework.Game
     {
+        struct LightingKeyframe
+        {
+            public float   Time;
+            public Vector3 SunDirection;
+            public Color   SunColor;
+            public Color   AmbientColor;
+        }
+
+        static readonly LightingKeyframe[] DayGradient =
+        {
+            new() { Time=0.00f, SunDirection=Vector3.Normalize(new(-0.2f,-0.5f, 0.8f)), SunColor=new Color( 40, 55,100), AmbientColor=new Color( 18, 18, 35) },
+            new() { Time=0.25f, SunDirection=Vector3.Normalize(new( 0.8f,-0.3f,-0.5f)), SunColor=new Color(255,190,100), AmbientColor=new Color(120, 80, 60) },
+            new() { Time=0.42f, SunDirection=Vector3.Normalize(new( 0.3f,-0.7f,-0.6f)), SunColor=new Color(220,210,190), AmbientColor=new Color(100,100,120) },
+            new() { Time=0.75f, SunDirection=Vector3.Normalize(new( 0.8f,-0.3f,-0.5f)), SunColor=new Color(255,190,100), AmbientColor=new Color(120, 80, 60) },
+            new() { Time=1.00f, SunDirection=Vector3.Normalize(new(-0.2f,-0.5f, 0.8f)), SunColor=new Color( 40, 55,100), AmbientColor=new Color( 18, 18, 35) },
+        };
+
+        static LightingKeyframe SampleGradient(float t)
+        {
+            for (int i = 0; i < DayGradient.Length - 1; i++)
+            {
+                var a = DayGradient[i];
+                var b = DayGradient[i + 1];
+                if (t >= a.Time && t <= b.Time)
+                {
+                    float s = (t - a.Time) / (b.Time - a.Time);
+                    return new LightingKeyframe
+                    {
+                        SunDirection = Vector3.Normalize(Vector3.Lerp(a.SunDirection, b.SunDirection, s)),
+                        SunColor     = Color.Lerp(a.SunColor,     b.SunColor,     s),
+                        AmbientColor = Color.Lerp(a.AmbientColor, b.AmbientColor, s),
+                    };
+                }
+            }
+            return DayGradient[0];
+        }
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
 
@@ -62,8 +98,10 @@ namespace VoxelShooter
 
         MapObjectLayer spawnLayer;           // promoted from LoadContent local so RestartGame() can repopulate enemies
 
-        // Lighting cycle: 0=default, 1=golden hour, 2=overcast, 3=night
-        int currentLightingState = 0;
+        // Continuous time-of-day cycle (0–1 = midnight→midnight)
+        float timeOfDay      = (float)DateTime.Now.TimeOfDay.TotalSeconds / 86400f;
+        float timeOfDaySpeed = 0.00005f;     // one full day ≈ 5.5 min at 60fps — tune to taste
+        
         Vector3 defaultSunDirection;
         Color   defaultSunColor;
         Color   defaultAmbientColor;
@@ -313,35 +351,17 @@ namespace VoxelShooter
                 return;
             }
 
-            // Lighting cycle: C or Y toggles through day→golden hour→overcast→night→default→...
+            // Continuous time-of-day cycle: advances automatically, influenced by C/Y key for demo jumps
+            timeOfDay = (timeOfDay + timeOfDaySpeed * (float)gameTime.ElapsedGameTime.TotalSeconds * 60f) % 1f;
+
+            // C/Y jumps forward 6 hours for demo
             if (inputManager.IsPressed(VoxelAction.LightingCycle))
-            {
-                currentLightingState = (currentLightingState + 1) % 4;
-                switch (currentLightingState)
-                {
-                    case 1: // Golden Hour — low sun grazing from the side, warm orange tones
-                        gameWorld.SunDirection = Vector3.Normalize(new Vector3(0.8f, -0.3f, -0.5f));
-                        gameWorld.SunColor     = new Color(255, 190, 100);
-                        gameWorld.AmbientColor = new Color(120, 80, 60);
-                        break;
-                    case 2: // Overcast — no strong directional, flat diffuse grey fill
-                        gameWorld.SunDirection = Vector3.Normalize(new Vector3(0.1f, -1f, -0.2f));
-                        gameWorld.SunColor     = new Color(70, 75, 85);
-                        gameWorld.AmbientColor = new Color(140, 140, 150);
-                        break;
-                    case 3: // Night — moonlight from behind, very dark
-                        gameWorld.SunDirection = Vector3.Normalize(new Vector3(-0.2f, -0.5f, 0.8f));
-                        gameWorld.SunColor     = new Color(40, 55, 100);
-                        gameWorld.AmbientColor = new Color(18, 18, 35);
-                        break;
-                    case 0: // Default
-                    default:
-                        gameWorld.SunDirection = defaultSunDirection;
-                        gameWorld.SunColor     = defaultSunColor;
-                        gameWorld.AmbientColor = defaultAmbientColor;
-                        break;
-                }
-            }
+                timeOfDay = (timeOfDay + 0.25f) % 1f;
+
+            var kf = SampleGradient(timeOfDay);
+            gameWorld.SunDirection = kf.SunDirection;
+            gameWorld.SunColor     = kf.SunColor;
+            gameWorld.AmbientColor = kf.AmbientColor;
 
             // Camera selection: keys 1-4, RB=next, LB=prev
             {
@@ -506,8 +526,8 @@ namespace VoxelShooter
             //spriteBatch.DrawString(font, gameHero.XP.ToString("0.00"), Vector2.One * 5, Color.White);
 
             // Lighting state indicator, top-left
-            string[] lightingStateNames = { "Day", "Golden Hour", "Overcast", "Night" };
-            spriteBatch.DrawString(font, $"Lighting: {lightingStateNames[currentLightingState]}",
+            int totalMinutes = (int)(timeOfDay * 1440);
+            spriteBatch.DrawString(font, $"Time of Day: {totalMinutes/60:D2}:{totalMinutes%60:D2}",
                 new Vector2(70f, 12f),
                 Color.White * 0.85f);
 
