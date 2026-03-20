@@ -38,8 +38,10 @@ namespace BTTYEngine
 
             drawEffect = new BasicEffect(gd)
             {
-                VertexColorEnabled = true
+                VertexColorEnabled = true,
+                LightingEnabled    = true,
             };
+            drawEffect.DirectionalLight0.Enabled = true;
 
         }
 
@@ -69,9 +71,12 @@ namespace BTTYEngine
                 }
             }
 
-            drawEffect.World = gameCamera.WorldMatrix;
-            drawEffect.View = gameCamera.ViewMatrix;
+            drawEffect.World      = gameCamera.WorldMatrix;
+            drawEffect.View       = gameCamera.ViewMatrix;
             drawEffect.Projection = gameCamera.ProjectionMatrix;
+            drawEffect.AmbientLightColor              = gameWorld.AmbientColor.ToVector3();
+            drawEffect.DirectionalLight0.DiffuseColor = gameWorld.SunColor.ToVector3();
+            drawEffect.DirectionalLight0.Direction    = gameWorld.SunDirection;
         }
 
         public void Draw()

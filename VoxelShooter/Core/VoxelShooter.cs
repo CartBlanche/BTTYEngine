@@ -62,6 +62,12 @@ namespace VoxelShooter
 
         MapObjectLayer spawnLayer;           // promoted from LoadContent local so RestartGame() can repopulate enemies
 
+        // Lighting cycle: 0=default, 1=golden hour, 2=overcast, 3=night
+        int currentLightingState = 0;
+        Vector3 defaultSunDirection;
+        Color   defaultSunColor;
+        Color   defaultAmbientColor;
+
         // "You Died" my homage to Demon's Souls
         float youDiedTimer          = 0f;    // ms counting down from 4000 → 0; non-zero freezes gameplay
         float deathExplosionTimer   = 0f;    // 600ms ship-explosion pause before the overlay appears
@@ -126,6 +132,11 @@ namespace VoxelShooter
 
             gameWorld.UpdateWorldMeshes();
 
+            // Snapshot the default lighting for the cycle-reset.
+            defaultSunDirection = gameWorld.SunDirection;
+            defaultSunColor     = gameWorld.SunColor;
+            defaultAmbientColor = gameWorld.AmbientColor;
+
             scrollColumn = 12;
 
             sideCamera          = new SideScrollingCamera(GraphicsDevice, GraphicsDevice.Viewport);
@@ -167,11 +178,16 @@ namespace VoxelShooter
 
             drawEffect = new BasicEffect(GraphicsDevice)
             {
-                World = cameraManager.WorldMatrix,
-                View = cameraManager.ViewMatrix,
-                Projection = cameraManager.ProjectionMatrix,
+                World             = cameraManager.WorldMatrix,
+                View              = cameraManager.ViewMatrix,
+                Projection        = cameraManager.ProjectionMatrix,
                 VertexColorEnabled = true,
+                LightingEnabled   = true,
+                AmbientLightColor = gameWorld.AmbientColor.ToVector3(),
             };
+            drawEffect.DirectionalLight0.Enabled      = true;
+            drawEffect.DirectionalLight0.DiffuseColor = gameWorld.SunColor.ToVector3();
+            drawEffect.DirectionalLight0.Direction    = gameWorld.SunDirection;
 
             // Input bindings
             inputManager.Bind(VoxelAction.MoveUp,     Keys.W, Keys.Up);
@@ -187,7 +203,9 @@ namespace VoxelShooter
             inputManager.Bind(VoxelAction.Camera1,    Keys.D1);
             inputManager.Bind(VoxelAction.Camera2,    Keys.D2);
             inputManager.Bind(VoxelAction.Camera3,    Keys.D3);
-            inputManager.Bind(VoxelAction.Camera4,    Keys.D4);
+            inputManager.Bind(VoxelAction.Camera4,       Keys.D4);
+            inputManager.Bind(VoxelAction.LightingCycle, Keys.C);
+            inputManager.Bind(VoxelAction.LightingCycle, Buttons.Y);
             inputManager.BindAxis(VoxelAction.Fire,   GamePadAxis.RightTrigger, 1f, 0.1f);
             inputManager.BindAxis(VoxelAction.MoveRight, GamePadAxis.LeftStickX,  1f);
             inputManager.BindAxis(VoxelAction.MoveLeft,  GamePadAxis.LeftStickX, -1f);
@@ -295,6 +313,36 @@ namespace VoxelShooter
                 return;
             }
 
+            // Lighting cycle: C or Y toggles through day→golden hour→overcast→night→default→...
+            if (inputManager.IsPressed(VoxelAction.LightingCycle))
+            {
+                currentLightingState = (currentLightingState + 1) % 4;
+                switch (currentLightingState)
+                {
+                    case 1: // Golden Hour — low sun grazing from the side, warm orange tones
+                        gameWorld.SunDirection = Vector3.Normalize(new Vector3(0.8f, -0.3f, -0.5f));
+                        gameWorld.SunColor     = new Color(255, 190, 100);
+                        gameWorld.AmbientColor = new Color(120, 80, 60);
+                        break;
+                    case 2: // Overcast — no strong directional, flat diffuse grey fill
+                        gameWorld.SunDirection = Vector3.Normalize(new Vector3(0.1f, -1f, -0.2f));
+                        gameWorld.SunColor     = new Color(70, 75, 85);
+                        gameWorld.AmbientColor = new Color(140, 140, 150);
+                        break;
+                    case 3: // Night — moonlight from behind, very dark
+                        gameWorld.SunDirection = Vector3.Normalize(new Vector3(-0.2f, -0.5f, 0.8f));
+                        gameWorld.SunColor     = new Color(40, 55, 100);
+                        gameWorld.AmbientColor = new Color(18, 18, 35);
+                        break;
+                    case 0: // Default
+                    default:
+                        gameWorld.SunDirection = defaultSunDirection;
+                        gameWorld.SunColor     = defaultSunColor;
+                        gameWorld.AmbientColor = defaultAmbientColor;
+                        break;
+                }
+            }
+
             // Camera selection: keys 1-4, RB=next, LB=prev
             {
                 int requested = 0;
@@ -390,6 +438,9 @@ namespace VoxelShooter
 
             drawEffect.View = cameraManager.ViewMatrix;
             drawEffect.World = cameraManager.WorldMatrix;
+            drawEffect.AmbientLightColor                  = gameWorld.AmbientColor.ToVector3();
+            drawEffect.DirectionalLight0.DiffuseColor     = gameWorld.SunColor.ToVector3();
+            drawEffect.DirectionalLight0.Direction        = gameWorld.SunDirection;
 
             double elapsed = gameTime.ElapsedGameTime.TotalSeconds;
             if (elapsed > 0) fps = MathHelper.Lerp((float)fps, (float)(1.0 / elapsed), 0.05f);
@@ -453,6 +504,12 @@ namespace VoxelShooter
 
             }
             //spriteBatch.DrawString(font, gameHero.XP.ToString("0.00"), Vector2.One * 5, Color.White);
+
+            // Lighting state indicator, top-left
+            string[] lightingStateNames = { "Day", "Golden Hour", "Overcast", "Night" };
+            spriteBatch.DrawString(font, $"Lighting: {lightingStateNames[currentLightingState]}",
+                new Vector2(70f, 12f),
+                Color.White * 0.85f);
 
             // Camera indicator, bottom-left (viewport-anchored, no offset)
             string camLabel = $"{cameraNames[activeCameraIndex]}  [{activeCameraIndex}]";

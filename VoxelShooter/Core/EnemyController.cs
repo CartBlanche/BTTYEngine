@@ -43,8 +43,10 @@ namespace VoxelShooter
 
 			drawEffect = new BasicEffect(gd)
 			{
-				VertexColorEnabled = true
+				VertexColorEnabled = true,
+				LightingEnabled    = true,
 			};
+			drawEffect.DirectionalLight0.Enabled = true;
 		}
 
 		public void LoadContent(ContentManager content, MapObjectLayer spawnLayer)
@@ -145,9 +147,12 @@ namespace VoxelShooter
                 foreach (var en in Enemies)
                     en.SyncPhysicsToPosition();
 
-			drawEffect.World = gameCamera.WorldMatrix;
-			drawEffect.View = gameCamera.ViewMatrix;
-			drawEffect.Projection = gameCamera.ProjectionMatrix;
+drawEffect.World      = gameCamera.WorldMatrix;
+		drawEffect.View       = gameCamera.ViewMatrix;
+		drawEffect.Projection = gameCamera.ProjectionMatrix;
+		drawEffect.AmbientLightColor              = gameWorld.AmbientColor.ToVector3();
+		drawEffect.DirectionalLight0.DiffuseColor = gameWorld.SunColor.ToVector3();
+		drawEffect.DirectionalLight0.Direction    = gameWorld.SunDirection;
 		}
 
 		public void Draw(ICamera gameCamera)

@@ -123,12 +123,12 @@ namespace BTTYEngine
 
                         Vector3 worldOffset = new Vector3(baseX + x * Voxel.SIZE, baseY + y * Voxel.SIZE, baseZ + z * Voxel.SIZE);
 
-                        if (!IsVoxelAt(x, y, z - 1)) MakeQuad(worldOffset, nnn, pnn, ppn, npn, normNZ, CalcLighting(x, y, z,     v.TR, v.TG, v.TB));
-                        if (!IsVoxelAt(x, y, z + 1)) MakeQuad(worldOffset, ppp, pnp, nnp, npp, normPZ, CalcLighting(x, y, z,     v.TR, v.TG, v.TB));
-                        if (!IsVoxelAt(x - 1, y, z)) MakeQuad(worldOffset, nnn, npn, npp, nnp, normNX, CalcLighting(x - 1, y, z, v.SR, v.SG, v.SB));
-                        if (!IsVoxelAt(x + 1, y, z)) MakeQuad(worldOffset, ppp, ppn, pnn, pnp, normPX, CalcLighting(x + 1, y, z, v.SR, v.SG, v.SB));
-                        if (!IsVoxelAt(x, y + 1, z)) MakeQuad(worldOffset, npn, ppn, ppp, npp, normPY, CalcLighting(x, y + 1, z, v.TR, v.TG, v.TB));
-                        if (!IsVoxelAt(x, y - 1, z)) MakeQuad(worldOffset, pnp, pnn, nnn, nnp, normNY, CalcLighting(x, y - 1, z, v.SR, v.SG, v.SB));
+                        if (!IsVoxelAt(x, y, z - 1)) MakeQuad(worldOffset, nnn, pnn, ppn, npn, normNZ, CalcAO(x, y, z, v.TR, v.TG, v.TB, normNZ));
+                        if (!IsVoxelAt(x, y, z + 1)) MakeQuad(worldOffset, ppp, pnp, nnp, npp, normPZ, CalcAO(x, y, z, v.TR, v.TG, v.TB, normPZ));
+                        if (!IsVoxelAt(x - 1, y, z)) MakeQuad(worldOffset, nnn, npn, npp, nnp, normNX, CalcAO(x, y, z, v.SR, v.SG, v.SB, normNX));
+                        if (!IsVoxelAt(x + 1, y, z)) MakeQuad(worldOffset, ppp, ppn, pnn, pnp, normPX, CalcAO(x, y, z, v.SR, v.SG, v.SB, normPX));
+                        if (!IsVoxelAt(x, y + 1, z)) MakeQuad(worldOffset, npn, ppn, ppp, npp, normPY, CalcAO(x, y, z, v.TR, v.TG, v.TB, normPY));
+                        if (!IsVoxelAt(x, y - 1, z)) MakeQuad(worldOffset, pnp, pnn, nnn, nnp, normNY, CalcAO(x, y, z, v.SR, v.SG, v.SB, normNY));
                     }
 
             // Copy scratch buffers into instance arrays, reallocating only when capacity is exceeded.
@@ -177,34 +177,50 @@ namespace BTTYEngine
             Updated = true;
         }
 
-        // Accepts raw colour bytes to avoid constructing a Color struct at each of the 6 callsites.
-        // Uses a uint bitmask (one bit per shadow direction) instead of a bool[] field,
-        // eliminating the reset loop and allowing an early exit once all directions are shadowed.
-        Color CalcLighting(int x, int y, int z, byte r, byte g, byte b)
+        // Bakes per-face ambient occlusion into vertex colour.
+        // faceNormal selects which axis hemisphere to probe, making the result camera-agnostic:
+        // the +Y face is always occluded by geometry above it, the -X face by geometry to its
+        // left, etc., regardless of which way the camera is pointing.
+        // intensityFactor is halved vs. the old CalcLighting (+Z-only); BasicEffect's directional
+        // light now supplies primary contrast so AO is a subtle crevice accent only.
+        Color CalcAO(int x, int y, int z, byte r, byte g, byte b, Vector3 faceNormal)
         {
-            z++;  // Y-up: probe away from voxel in +Z (toward camera), matching original Y-down behaviour in reverse
+            // Probe origin: one step outward along the face normal from the voxel centre.
+            int ox = x + (int)faceNormal.X;
+            int oy = y + (int)faceNormal.Y;
+            int oz = z + (int)faceNormal.Z;
 
             Vector3 colVect = new Color(r, g, b).ToVector3();
-            const float intensityFactor = 0.12f;
+            const float intensityFactor = 0.06f;
             float light = 1f;
-            uint hit = 0; // bits 0-10 correspond to the 11 shadow directions
+            uint hit = 0;
 
-            for (int zz = 0; zz < 4; zz++)
+            // Primary step direction and two perpendicular axes, derived from faceNormal.
+            // faceNormal is always one of ±(1,0,0), ±(0,1,0), ±(0,0,1).
+            int sx, sy, sz;  // one unit along faceNormal per depth level
+            int px, py, pz;  // first perpendicular axis
+            int qx, qy, qz;  // second perpendicular axis
+            if      (faceNormal.Z != 0f) { sx = 0; sy = 0; sz = (int)faceNormal.Z; px = 1; py = 0; pz = 0; qx = 0; qy = 1; qz = 0; }
+            else if (faceNormal.Y != 0f) { sx = 0; sy = (int)faceNormal.Y; sz = 0; px = 1; py = 0; pz = 0; qx = 0; qy = 0; qz = 1; }
+            else                         { sx = (int)faceNormal.X; sy = 0; sz = 0; px = 0; py = 1; pz = 0; qx = 0; qy = 0; qz = 1; }
+
+            for (int d = 0; d < 4; d++)
             {
-                float intensity = (intensityFactor / 4f) * (4f - zz);
-                // Three straight-back probes at close/mid/far depth, weights 3+0.5+0.5=4 match original total.
-                if ((hit & 0x001u) == 0 && IsVoxelAt(x, y, z + zz))           { light -= intensity * 3f;   hit |= 0x001u; }
-                if ((hit & 0x002u) == 0 && IsVoxelAt(x, y, z + (zz + 5)))     { light -= intensity * 0.5f; hit |= 0x002u; }
-                if ((hit & 0x004u) == 0 && IsVoxelAt(x, y, z + (zz + 10)))    { light -= intensity * 0.5f; hit |= 0x004u; }
-                if ((hit & 0x008u) == 0 && IsVoxelAt(x - zz, y - zz, z + zz)) { light -= intensity;        hit |= 0x008u; }
-                if ((hit & 0x010u) == 0 && IsVoxelAt(x, y - zz, z + zz))      { light -= intensity;        hit |= 0x010u; }
-                if ((hit & 0x020u) == 0 && IsVoxelAt(x + zz, y - zz, z + zz)) { light -= intensity;        hit |= 0x020u; }
-                if ((hit & 0x040u) == 0 && IsVoxelAt(x - zz, y, z + zz))      { light -= intensity;        hit |= 0x040u; }
-                if ((hit & 0x080u) == 0 && IsVoxelAt(x + zz, y, z + zz))      { light -= intensity;        hit |= 0x080u; }
-                if ((hit & 0x100u) == 0 && IsVoxelAt(x - zz, y + zz, z + zz)) { light -= intensity;        hit |= 0x100u; }
-                if ((hit & 0x200u) == 0 && IsVoxelAt(x, y + zz, z + zz))      { light -= intensity;        hit |= 0x200u; }
-                if ((hit & 0x400u) == 0 && IsVoxelAt(x + zz, y + zz, z + zz)) { light -= intensity;        hit |= 0x400u; }
-                if (hit == 0x7FFu) break; // all 11 directions shadowed, early exit now reachable
+                float intensity = (intensityFactor / 4f) * (4f - d);
+                // Three straight probes along the face normal: close, mid-range, far.
+                if ((hit & 0x001u) == 0 && IsVoxelAt(ox + sx * d,        oy + sy * d,        oz + sz * d))        { light -= intensity * 3f;   hit |= 0x001u; }
+                if ((hit & 0x002u) == 0 && IsVoxelAt(ox + sx * (d + 5),  oy + sy * (d + 5),  oz + sz * (d + 5)))  { light -= intensity * 0.5f; hit |= 0x002u; }
+                if ((hit & 0x004u) == 0 && IsVoxelAt(ox + sx * (d + 10), oy + sy * (d + 10), oz + sz * (d + 10))) { light -= intensity * 0.5f; hit |= 0x004u; }
+                // Eight fan probes spread across the hemisphere (±p, ±q, and their four diagonal combinations).
+                if ((hit & 0x008u) == 0 && IsVoxelAt(ox + sx*d - px*d,        oy + sy*d - py*d,        oz + sz*d - pz*d))        { light -= intensity; hit |= 0x008u; }
+                if ((hit & 0x010u) == 0 && IsVoxelAt(ox + sx*d - qx*d,        oy + sy*d - qy*d,        oz + sz*d - qz*d))        { light -= intensity; hit |= 0x010u; }
+                if ((hit & 0x020u) == 0 && IsVoxelAt(ox + sx*d + px*d,        oy + sy*d + py*d,        oz + sz*d + pz*d))        { light -= intensity; hit |= 0x020u; }
+                if ((hit & 0x040u) == 0 && IsVoxelAt(ox + sx*d + qx*d,        oy + sy*d + qy*d,        oz + sz*d + qz*d))        { light -= intensity; hit |= 0x040u; }
+                if ((hit & 0x080u) == 0 && IsVoxelAt(ox + sx*d - px*d - qx*d, oy + sy*d - py*d - qy*d, oz + sz*d - pz*d - qz*d)) { light -= intensity; hit |= 0x080u; }
+                if ((hit & 0x100u) == 0 && IsVoxelAt(ox + sx*d + px*d - qx*d, oy + sy*d + py*d - qy*d, oz + sz*d + pz*d - qz*d)) { light -= intensity; hit |= 0x100u; }
+                if ((hit & 0x200u) == 0 && IsVoxelAt(ox + sx*d - px*d + qx*d, oy + sy*d - py*d + qy*d, oz + sz*d - pz*d + qz*d)) { light -= intensity; hit |= 0x200u; }
+                if ((hit & 0x400u) == 0 && IsVoxelAt(ox + sx*d + px*d + qx*d, oy + sy*d + py*d + qy*d, oz + sz*d + pz*d + qz*d)) { light -= intensity; hit |= 0x400u; }
+                if (hit == 0x7FFu) break;
             }
 
             light = MathHelper.Clamp(light, 0f, 1f);

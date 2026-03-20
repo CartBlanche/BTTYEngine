@@ -13,6 +13,17 @@ namespace BTTYEngine
         public int Y_SIZE;
         public int Z_SIZE;
 
+        // Lighting parameters — any game can override these to control sun angle and colour.
+        // BasicEffect Direction convention: the direction the light RAY travels (source → scene).
+        // Side-scroller camera sits at +Z; visible faces have normals pointing toward +Z (normPZ)
+        // OR upward (normPY for tops). BasicEffect computes max(0, dot(N, -Direction)) so:
+        //   lighting top (+Y) faces  →  Direction.Y must be negative (sun coming from above)
+        //   lighting front (+Z) faces →  Direction.Z must be negative (sun coming from +Z side)
+        // Sun from upper-left at screen level: Y down, Z toward viewer.
+        public Vector3 SunDirection = Vector3.Normalize(new Vector3(0.3f, -0.7f, -0.6f));
+        public Color   SunColor     = new Color(220, 210, 190); // warm white sun (≈ 0.86 intensity)
+        public Color   AmbientColor = new Color(100, 100, 120); // soft blue-grey sky fill (≈ 0.39)
+
         const double REDRAW_INTERVAL = 10;
 
         public Chunk[, ,] Chunks;

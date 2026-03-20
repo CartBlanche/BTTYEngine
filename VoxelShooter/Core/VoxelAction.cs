@@ -18,5 +18,6 @@ namespace VoxelShooter
         Camera2,
         Camera3,
         Camera4,
+        LightingCycle,
     }
 }

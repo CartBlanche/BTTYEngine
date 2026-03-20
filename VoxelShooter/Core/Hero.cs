@@ -69,8 +69,10 @@ namespace VoxelShooter
 
             drawEffect = new BasicEffect(gd)
             {
-                VertexColorEnabled = true
+                VertexColorEnabled = true,
+                LightingEnabled    = true,
             };
+            drawEffect.DirectionalLight0.Enabled = true;
 
             collisionBoxSize = new Vector3(10, 4f, 2f);
             CollisionBox = new BoundingBox();
@@ -165,7 +167,10 @@ namespace VoxelShooter
             CheckLevelUp();
 
             drawEffect.Projection = gameCamera.ProjectionMatrix;
-            drawEffect.View = gameCamera.ViewMatrix;
+            drawEffect.View       = gameCamera.ViewMatrix;
+            drawEffect.AmbientLightColor              = gameWorld.AmbientColor.ToVector3();
+            drawEffect.DirectionalLight0.DiffuseColor = gameWorld.SunColor.ToVector3();
+            drawEffect.DirectionalLight0.Direction    = gameWorld.SunDirection;
 
             // Bank into vertical movement: positive Y = down the screen, so nose dips down → positive Z rotation
             float targetBank = Speed.Y * 0.4f;
