@@ -20,29 +20,25 @@ namespace BTTYEngine
 
         int currentParticleCount = 0;
 
-        BasicEffect drawEffect;
+        VoxelEffect _voxelEffect;
+        Matrix _world;
+        Matrix _view;
+        Matrix _projection;
 
         double updateTime = 0;
         double updateTargetTime = 10;
 
         int parts = 0;
 
-        public ParticleController(GraphicsDevice gd)
+        public ParticleController(GraphicsDevice gd, VoxelEffect voxelEffect)
         {
             Instance = this;
 
             graphicsDevice = gd;
+            _voxelEffect = voxelEffect;
 
             Particles = new Particle[MAX_PARTICLES];
             for (int i = 0; i < MAX_PARTICLES; i++) Particles[i] = new Particle();
-
-            drawEffect = new BasicEffect(gd)
-            {
-                VertexColorEnabled = true,
-                LightingEnabled    = true,
-            };
-            drawEffect.DirectionalLight0.Enabled = true;
-
         }
 
         public void Update(GameTime gameTime, ICamera gameCamera, VoxelWorld gameWorld)
@@ -71,23 +67,17 @@ namespace BTTYEngine
                 }
             }
 
-            drawEffect.World      = gameCamera.WorldMatrix;
-            drawEffect.View       = gameCamera.ViewMatrix;
-            drawEffect.Projection = gameCamera.ProjectionMatrix;
-            drawEffect.AmbientLightColor              = gameWorld.AmbientColor.ToVector3();
-            drawEffect.DirectionalLight0.DiffuseColor = gameWorld.SunColor.ToVector3();
-            drawEffect.DirectionalLight0.Direction    = gameWorld.SunDirection;
+            _world      = gameCamera.WorldMatrix;
+            _view       = gameCamera.ViewMatrix;
+            _projection = gameCamera.ProjectionMatrix;
         }
 
         public void Draw()
         {
             if (currentParticleCount == 0) return;
-            foreach (EffectPass pass in drawEffect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-
-                graphicsDevice.DrawUserIndexedPrimitives<VertexPositionNormalColor>(PrimitiveType.TriangleList, verts, 0, currentParticleCount * 24, indexes, 0, currentParticleCount * 12);
-            }
+            _voxelEffect.SetTint(Vector3.One);
+            _voxelEffect.Apply(_world, _view, _projection);
+            graphicsDevice.DrawUserIndexedPrimitives<VertexPositionNormalColor>(PrimitiveType.TriangleList, verts, 0, currentParticleCount * 24, indexes, 0, currentParticleCount * 12);
         }
 
         public void SpawnExplosion(Vector3 Position)
@@ -134,6 +124,25 @@ namespace BTTYEngine
         internal void Reset()
         {
             for (int i = 0; i < MAX_PARTICLES; i++) Particles[i].Active = false;
+        }
+
+        public void RegisterPointLights(VoxelWorld world)
+        {
+            for (int i = 0; i < MAX_PARTICLES; i++)
+            {
+                Particle p = Particles[i];
+                if (!p.Active) continue;
+                if (p.Time < 400)  // only fresh explosion sparks
+                {
+                    world.AddPointLight(new VoxelWorld.PointLight
+                    {
+                        Position  = p.Position,
+                        Color     = p.Color,
+                        Radius    = 20f,
+                        Intensity = 0.8f,
+                    });
+                }
+            }
         }
     }
 }

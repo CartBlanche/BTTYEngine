@@ -24,6 +24,27 @@ namespace BTTYEngine
         public Color   SunColor     = new Color(220, 210, 190); // warm white sun (≈ 0.86 intensity)
         public Color   AmbientColor = new Color(100, 100, 120); // soft blue-grey sky fill (≈ 0.39)
 
+        // ── Point lights ──────────────────────────────────────────────────
+        public struct PointLight
+        {
+            public Vector3 Position;
+            public Color   Color;
+            public float   Radius;     // world-space radius of influence
+            public float   Intensity;  // multiplier (1.0 = normal)
+        }
+
+        private const int MaxPointLights = 8;
+        private readonly List<PointLight> _pointLights = new(MaxPointLights);
+        public IReadOnlyList<PointLight> PointLights => _pointLights;
+
+        public void ClearPointLights() => _pointLights.Clear();
+
+        public void AddPointLight(PointLight light)
+        {
+            if (_pointLights.Count < MaxPointLights)
+                _pointLights.Add(light);
+        }
+
         const double REDRAW_INTERVAL = 10;
 
         public Chunk[, ,] Chunks;

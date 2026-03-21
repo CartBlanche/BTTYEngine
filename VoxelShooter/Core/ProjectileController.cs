@@ -17,25 +17,18 @@ namespace VoxelShooter
 
         List<Projectile> Projectiles; 
 
-        BasicEffect drawEffect;
+        VoxelEffect _voxelEffect;
 
         VoxelSprite projectileStrip;
 
         static readonly Matrix _rotX90 = Matrix.CreateRotationX(MathHelper.PiOver2);
 
-        public ProjectileController(GraphicsDevice gd)
+        public ProjectileController(GraphicsDevice gd, VoxelEffect voxelEffect)
         {
             Instance = this;
             graphicsDevice = gd;
             Projectiles = new List<Projectile>();
-
-            drawEffect = new BasicEffect(gd)
-            {
-                VertexColorEnabled = true,
-                LightingEnabled    = true,
-            };
-            drawEffect.DirectionalLight0.Enabled = true;
-
+            _voxelEffect = voxelEffect;
         }
 
         public void LoadContent(ContentManager content)
@@ -55,13 +48,6 @@ namespace VoxelShooter
                 if (p.Active) Projectiles[writeIdx++] = p;
             }
             while (Projectiles.Count > writeIdx) Projectiles.RemoveAt(Projectiles.Count - 1);
-
-            drawEffect.World      = gameCamera.WorldMatrix;
-            drawEffect.View       = gameCamera.ViewMatrix;
-            drawEffect.Projection = gameCamera.ProjectionMatrix;
-            drawEffect.AmbientLightColor              = gameWorld.AmbientColor.ToVector3();
-            drawEffect.DirectionalLight0.DiffuseColor = gameWorld.SunColor.ToVector3();
-            drawEffect.DirectionalLight0.Direction    = gameWorld.SunDirection;
         }
 
         public void Draw(ICamera gameCamera)
@@ -69,32 +55,20 @@ namespace VoxelShooter
             for (int i = 0; i < Projectiles.Count; i++)
             {
                 Projectile p = Projectiles[i];
+                _voxelEffect.SetTint(Vector3.One);
                 if (p.Type == ProjectileType.Rocket)
                 {
-                    drawEffect.World = gameCamera.WorldMatrix *
-                                       _rotX90 *
-                                       p.Rotation *
-                                       Matrix.CreateScale(0.5f) *
-                                       Matrix.CreateTranslation(p.Position);
-                    foreach (EffectPass pass in drawEffect.CurrentTechnique.Passes)
-                    {
-                        pass.Apply();
-                        var chunk = projectileStrip.AnimChunks[4];
-                        graphicsDevice.DrawUserIndexedPrimitives<VertexPositionNormalColor>(PrimitiveType.TriangleList, chunk.VertexArray, 0, chunk.VertexArray.Length, chunk.IndexArray, 0, chunk.VertexArray.Length / 2);
-                    }
+                    var rWorld = gameCamera.WorldMatrix * _rotX90 * p.Rotation * Matrix.CreateScale(0.5f) * Matrix.CreateTranslation(p.Position);
+                    _voxelEffect.Apply(rWorld, gameCamera.ViewMatrix, gameCamera.ProjectionMatrix);
+                    var chunk = projectileStrip.AnimChunks[4];
+                    graphicsDevice.DrawUserIndexedPrimitives<VertexPositionNormalColor>(PrimitiveType.TriangleList, chunk.VertexArray, 0, chunk.VertexArray.Length, chunk.IndexArray, 0, chunk.VertexArray.Length / 2);
                 }
                 else
                 {
-                    drawEffect.World = gameCamera.WorldMatrix *
-                                       _rotX90 *
-                                       p.Rotation *
-                                       Matrix.CreateTranslation(p.Position);
-                    foreach (EffectPass pass in drawEffect.CurrentTechnique.Passes)
-                    {
-                        pass.Apply();
-                        var chunk = projectileStrip.AnimChunks[(int)p.Type];
-                        graphicsDevice.DrawUserIndexedPrimitives<VertexPositionNormalColor>(PrimitiveType.TriangleList, chunk.VertexArray, 0, chunk.VertexArray.Length, chunk.IndexArray, 0, chunk.VertexArray.Length / 2);
-                    }
+                    var pWorld = gameCamera.WorldMatrix * _rotX90 * p.Rotation * Matrix.CreateTranslation(p.Position);
+                    _voxelEffect.Apply(pWorld, gameCamera.ViewMatrix, gameCamera.ProjectionMatrix);
+                    var chunk = projectileStrip.AnimChunks[(int)p.Type];
+                    graphicsDevice.DrawUserIndexedPrimitives<VertexPositionNormalColor>(PrimitiveType.TriangleList, chunk.VertexArray, 0, chunk.VertexArray.Length, chunk.IndexArray, 0, chunk.VertexArray.Length / 2);
                 }
             }
         }
@@ -102,6 +76,34 @@ namespace VoxelShooter
         public void Reset()
         {
             Projectiles.Clear();
+        }
+
+        public void RegisterPointLights(VoxelWorld world)
+        {
+            foreach (var p in Projectiles)
+            {
+                if (!p.Active) continue;
+                if (p.Type == ProjectileType.Rocket)
+                {
+                    world.AddPointLight(new VoxelWorld.PointLight
+                    {
+                        Position  = p.Position,
+                        Color     = new Color(255, 190, 80),
+                        Radius    = 40f,
+                        Intensity = 1.2f,
+                    });
+                }
+                else
+                {
+                    world.AddPointLight(new VoxelWorld.PointLight
+                    {
+                        Position  = p.Position,
+                        Color     = new Color(80, 180, 255),
+                        Radius    = 15f,
+                        Intensity = 0.6f,
+                    });
+                }
+            }
         }
 
         public void Spawn(ProjectileType type, object owner, Vector3 pos, Matrix rot, Vector3 speed, float damage, double life, bool gravity)

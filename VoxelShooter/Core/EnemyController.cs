@@ -32,20 +32,14 @@ namespace VoxelShooter
 		Dictionary<string, VoxelSprite> spriteSheets = new Dictionary<string,VoxelSprite>();
 
 		GraphicsDevice graphicsDevice;
-		BasicEffect drawEffect;
+		VoxelEffect _voxelEffect;
 
-		public EnemyController(GraphicsDevice gd)
+		public EnemyController(GraphicsDevice gd, VoxelEffect voxelEffect)
 		{
 			Instance = this;
 
 			graphicsDevice = gd;
-
-			drawEffect = new BasicEffect(gd)
-			{
-				VertexColorEnabled = true,
-				LightingEnabled    = true,
-			};
-			drawEffect.DirectionalLight0.Enabled = true;
+			_voxelEffect = voxelEffect;
 		}
 
 		public void LoadContent(ContentManager content, MapObjectLayer spawnLayer)
@@ -155,12 +149,6 @@ namespace VoxelShooter
                 foreach (var en in Enemies)
                     en.SyncPhysicsToPosition();
 
-drawEffect.World      = gameCamera.WorldMatrix;
-		drawEffect.View       = gameCamera.ViewMatrix;
-		drawEffect.Projection = gameCamera.ProjectionMatrix;
-		drawEffect.AmbientLightColor              = gameWorld.AmbientColor.ToVector3();
-		drawEffect.DirectionalLight0.DiffuseColor = gameWorld.SunColor.ToVector3();
-		drawEffect.DirectionalLight0.Direction    = gameWorld.SunDirection;
 		}
 
 		public void Draw(ICamera gameCamera)
@@ -168,24 +156,16 @@ drawEffect.World      = gameCamera.WorldMatrix;
 
 			foreach (Enemy e in Enemies)
 			{
-				drawEffect.DiffuseColor = new Vector3(1f,1f-e.hitAlpha,1f-e.hitAlpha);
-				drawEffect.Alpha = 1f;
-				drawEffect.World = gameCamera.WorldMatrix *
+				var eWorld = gameCamera.WorldMatrix *
 					Matrix.CreateRotationX(e.Rotation.X) *
-                        Matrix.CreateRotationY(e.Rotation.Y) *
-						Matrix.CreateRotationZ(e.Rotation.Z) *
-						Matrix.CreateScale(e.Scale) *
-						Matrix.CreateTranslation(e.Position);
-
-                foreach (EffectPass pass in drawEffect.CurrentTechnique.Passes)
-                {
-                    pass.Apply();
-
-
-                    graphicsDevice.DrawUserIndexedPrimitives<VertexPositionNormalColor>(PrimitiveType.TriangleList, e.spriteSheet.AnimChunks[e.CurrentFrame + e.offsetFrame].VertexArray, 0, e.spriteSheet.AnimChunks[e.CurrentFrame + e.offsetFrame].VertexArray.Length, e.spriteSheet.AnimChunks[e.CurrentFrame + e.offsetFrame].IndexArray, 0, e.spriteSheet.AnimChunks[e.CurrentFrame + e.offsetFrame].VertexArray.Length / 2);
-
-                }
-
+					Matrix.CreateRotationY(e.Rotation.Y) *
+					Matrix.CreateRotationZ(e.Rotation.Z) *
+					Matrix.CreateScale(e.Scale) *
+					Matrix.CreateTranslation(e.Position);
+				_voxelEffect.SetTint(new Vector3(1f, 1f - e.hitAlpha, 1f - e.hitAlpha));
+				_voxelEffect.Apply(eWorld, gameCamera.ViewMatrix, gameCamera.ProjectionMatrix);
+				var eChunk = e.spriteSheet.AnimChunks[e.CurrentFrame + e.offsetFrame];
+				graphicsDevice.DrawUserIndexedPrimitives<VertexPositionNormalColor>(PrimitiveType.TriangleList, eChunk.VertexArray, 0, eChunk.VertexArray.Length, eChunk.IndexArray, 0, eChunk.VertexArray.Length / 2);
 			}
 
             for (int i = 0; i < Enemies.Count; i++)
@@ -193,24 +173,16 @@ drawEffect.World      = gameCamera.WorldMatrix;
                 if (!(Enemies[i] is Turret)) continue;
                 Enemy e = Enemies[i];
                 Turret t = (Turret)e;
-                drawEffect.DiffuseColor = new Vector3(1f, 1f - e.hitAlpha, 1f - e.hitAlpha);
-                drawEffect.Alpha = 1f;
-                drawEffect.World = gameCamera.WorldMatrix *
+                var tWorld = gameCamera.WorldMatrix *
                     Matrix.CreateRotationX(e.Rotation.X + (t.Inverted ? MathHelper.Pi : 0f)) *
                     Matrix.CreateRotationZ(e.Rotation.Z + (t.barrelRot + MathHelper.PiOver2)) *
                     Matrix.CreateRotationY(e.Rotation.Y) *
                     Matrix.CreateScale(e.Scale) *
                     Matrix.CreateTranslation(e.Position);
-                        
-
-                foreach (EffectPass pass in drawEffect.CurrentTechnique.Passes)
-                {
-                    pass.Apply();
-
-
-                    graphicsDevice.DrawUserIndexedPrimitives<VertexPositionNormalColor>(PrimitiveType.TriangleList, e.spriteSheet.AnimChunks[1].VertexArray, 0, e.spriteSheet.AnimChunks[1].VertexArray.Length, e.spriteSheet.AnimChunks[1].IndexArray, 0, e.spriteSheet.AnimChunks[1].VertexArray.Length / 2);
-
-                }
+                _voxelEffect.SetTint(new Vector3(1f, 1f - e.hitAlpha, 1f - e.hitAlpha));
+                _voxelEffect.Apply(tWorld, gameCamera.ViewMatrix, gameCamera.ProjectionMatrix);
+                var tChunk = e.spriteSheet.AnimChunks[1];
+                graphicsDevice.DrawUserIndexedPrimitives<VertexPositionNormalColor>(PrimitiveType.TriangleList, tChunk.VertexArray, 0, tChunk.VertexArray.Length, tChunk.IndexArray, 0, tChunk.VertexArray.Length / 2);
             }
 		}
 

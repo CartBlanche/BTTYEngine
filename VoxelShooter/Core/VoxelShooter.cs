@@ -73,7 +73,7 @@ namespace VoxelShooter
         static readonly string[] cameraNames = { "", "Side-Scrolling", "Isometric", "First Person", "Top-Down" };
         double fps;
 
-        BasicEffect drawEffect;
+        VoxelEffect _voxelEffect;
 
         EnemyController enemyController;
         ProjectileController projectileController;
@@ -210,31 +210,21 @@ namespace VoxelShooter
             physicsManager = new PhysicsManager();
             physicsManager.Initialize();
 
+            var fxAsset = Content.Load<Effect>("VoxelEffect");
+            _voxelEffect = new VoxelEffect(fxAsset);
+
             gameHero = new Hero();
-            gameHero.LoadContent(Content, GraphicsDevice);
+            gameHero.LoadContent(Content, GraphicsDevice, _voxelEffect);
             gameHero.InitPhysics(physicsManager);
 
-            enemyController = new EnemyController(GraphicsDevice);
+            enemyController = new EnemyController(GraphicsDevice, _voxelEffect);
             enemyController.LoadContent(Content, spawnLayer);
-            projectileController = new ProjectileController(GraphicsDevice);
+            projectileController = new ProjectileController(GraphicsDevice, _voxelEffect);
             projectileController.LoadContent(Content);
-            particleController = new ParticleController(GraphicsDevice);
+            particleController = new ParticleController(GraphicsDevice, _voxelEffect);
             powerupController = new PowerupController(GraphicsDevice);
             powerupController.LoadContent(Content);
             gameStarfield = new Starfield(GraphicsDevice);
-
-            drawEffect = new BasicEffect(GraphicsDevice)
-            {
-                World             = cameraManager.WorldMatrix,
-                View              = cameraManager.ViewMatrix,
-                Projection        = cameraManager.ProjectionMatrix,
-                VertexColorEnabled = true,
-                LightingEnabled   = true,
-                AmbientLightColor = gameWorld.AmbientColor.ToVector3(),
-            };
-            drawEffect.DirectionalLight0.Enabled      = true;
-            drawEffect.DirectionalLight0.DiffuseColor = gameWorld.SunColor.ToVector3();
-            drawEffect.DirectionalLight0.Direction    = gameWorld.SunDirection;
 
             // Input bindings
             inputManager.Bind(VoxelAction.MoveUp,     Keys.W, Keys.Up);
@@ -330,8 +320,6 @@ namespace VoxelShooter
                 }
 
                 cameraManager.Update(gameTime, gameWorld);
-                drawEffect.View  = cameraManager.ViewMatrix;
-                drawEffect.World = cameraManager.WorldMatrix;
                 double deadSecs = gameTime.ElapsedGameTime.TotalSeconds;
                 if (deadSecs > 0)
                     fps = MathHelper.Lerp((float)fps, (float)(1.0 / deadSecs), 0.05f);
@@ -352,8 +340,6 @@ namespace VoxelShooter
 
                 cameraManager.Update(gameTime, gameWorld);
                 particleController.Update(gameTime, cameraManager, gameWorld);
-                drawEffect.View  = cameraManager.ViewMatrix;
-                drawEffect.World = cameraManager.WorldMatrix;
                 double explodeSecs = gameTime.ElapsedGameTime.TotalSeconds;
                 if (explodeSecs > 0) fps = MathHelper.Lerp((float)fps, (float)(1.0 / explodeSecs), 0.05f);
                 base.Update(gameTime);
@@ -465,12 +451,6 @@ namespace VoxelShooter
             powerupController.Update(gameTime, cameraManager, gameWorld, gameHero, scrollPos);
             gameStarfield.Update(gameTime, cameraManager, gameWorld, scrollSpeed);
 
-            drawEffect.View = cameraManager.ViewMatrix;
-            drawEffect.World = cameraManager.WorldMatrix;
-            drawEffect.AmbientLightColor                  = gameWorld.AmbientColor.ToVector3();
-            drawEffect.DirectionalLight0.DiffuseColor     = gameWorld.SunColor.ToVector3();
-            drawEffect.DirectionalLight0.Direction        = gameWorld.SunDirection;
-
             double elapsed = gameTime.ElapsedGameTime.TotalSeconds;
             if (elapsed > 0) fps = MathHelper.Lerp((float)fps, (float)(1.0 / elapsed), 0.05f);
 
@@ -490,23 +470,28 @@ namespace VoxelShooter
 
             gameStarfield.Draw();
 
-            foreach (EffectPass pass in drawEffect.CurrentTechnique.Passes)
+            gameWorld.ClearPointLights();
+            projectileController.RegisterPointLights(gameWorld);
+            particleController.RegisterPointLights(gameWorld);
+            var lights = gameWorld.PointLights;
+            _voxelEffect.SetSun(gameWorld.SunDirection, gameWorld.SunColor, gameWorld.AmbientColor);
+            for (int i = 0; i < lights.Count; i++)
+                _voxelEffect.SetPointLight(i, lights[i].Position, lights[i].Color, lights[i].Radius, lights[i].Intensity);
+            _voxelEffect.CommitPointLights(lights.Count);
+            _voxelEffect.SetTint(Vector3.One);
+            _voxelEffect.Apply(cameraManager.WorldMatrix, cameraManager.ViewMatrix, cameraManager.ProjectionMatrix);
+            for (int z = 0; z < gameWorld.Z_CHUNKS; z++)
             {
-                pass.Apply();
-
-                for (int z = 0; z < gameWorld.Z_CHUNKS; z++)
+                for (int y = 0; y < gameWorld.Y_CHUNKS; y++)
                 {
-                    for (int y = 0; y < gameWorld.Y_CHUNKS; y++)
+                    for (int x = 0; x < gameWorld.X_CHUNKS; x++)
                     {
-                        for (int x = 0; x < gameWorld.X_CHUNKS; x++)
-                        {
-                            Chunk c = gameWorld.Chunks[x, y, z];
-                            if (c == null) continue;
-                            if (!c.Visible) continue;
+                        Chunk c = gameWorld.Chunks[x, y, z];
+                        if (c == null) continue;
+                        if (!c.Visible) continue;
 
-                            if (c.VertexArray == null || c.QuadCount == 0) continue;
-                            GraphicsDevice.DrawUserIndexedPrimitives<VertexPositionNormalColor>(PrimitiveType.TriangleList, c.VertexArray, 0, c.QuadCount * 4, c.IndexArray, 0, c.QuadCount * 2);
-                        }
+                        if (c.VertexArray == null || c.QuadCount == 0) continue;
+                        GraphicsDevice.DrawUserIndexedPrimitives<VertexPositionNormalColor>(PrimitiveType.TriangleList, c.VertexArray, 0, c.QuadCount * 4, c.IndexArray, 0, c.QuadCount * 2);
                     }
                 }
             }
@@ -514,6 +499,7 @@ namespace VoxelShooter
             if (!gameHero.Dead) gameHero.Draw(GraphicsDevice);
 
             enemyController.Draw(cameraManager);
+            _voxelEffect.SetFullbright();
             projectileController.Draw(cameraManager);
             particleController.Draw();
             powerupController.Draw();

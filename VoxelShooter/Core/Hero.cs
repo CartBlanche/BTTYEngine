@@ -48,7 +48,9 @@ namespace VoxelShooter
 
         Vector3 tempSpeed;
 
-        BasicEffect drawEffect;
+        VoxelEffect _voxelEffect;
+        Matrix _view;
+        Matrix _projection;
         VoxelSprite shipSprite;
 
         float moveSpeed = 0.5f;
@@ -80,17 +82,12 @@ namespace VoxelShooter
             Position = new Vector3(-150f, 45f, 5f);
         }
 
-        public void LoadContent(ContentManager content, GraphicsDevice gd)
+        public void LoadContent(ContentManager content, GraphicsDevice gd, VoxelEffect voxelEffect)
         {
             shipSprite = new VoxelSprite(15, 15, 15);
             BvxLoader.LoadSprite(Path.Combine(content.RootDirectory, "ship.bvx"), ref shipSprite);
 
-            drawEffect = new BasicEffect(gd)
-            {
-                VertexColorEnabled = true,
-                LightingEnabled    = true,
-            };
-            drawEffect.DirectionalLight0.Enabled = true;
+            _voxelEffect = voxelEffect;
 
             collisionBoxSize = new Vector3(10, 4f, 2f);
             CollisionBox = new BoundingBox();
@@ -160,11 +157,8 @@ namespace VoxelShooter
 
             CheckLevelUp();
 
-            drawEffect.Projection = gameCamera.ProjectionMatrix;
-            drawEffect.View       = gameCamera.ViewMatrix;
-            drawEffect.AmbientLightColor              = gameWorld.AmbientColor.ToVector3();
-            drawEffect.DirectionalLight0.DiffuseColor = gameWorld.SunColor.ToVector3();
-            drawEffect.DirectionalLight0.Direction    = gameWorld.SunDirection;
+            _view       = gameCamera.ViewMatrix;
+            _projection = gameCamera.ProjectionMatrix;
 
             // Bank into vertical movement: positive Y = down the screen, so nose dips down → positive Z rotation
             float targetBank = Speed.Y * 0.4f;
@@ -202,37 +196,18 @@ namespace VoxelShooter
             Matrix.CreateRotationZ(bankAngle, out var _bankRot);
             Matrix.CreateTranslation(ref Position, out var _bankTrans);
             Matrix.Multiply(ref _bankRot, ref _bankTrans, out Matrix _bankWorld);
-            drawEffect.World = _bankWorld;
+            _voxelEffect.SetTint(new Vector3(1f, 1f - hitAlpha, 1f - hitAlpha));
+            _voxelEffect.Apply(_bankWorld, _view, _projection);
+            AnimChunk shipChunk = shipSprite.AnimChunks[0];
+            if (shipChunk != null && shipChunk.VertexArray != null && shipChunk.VertexArray.Length > 0)
+                gd.DrawUserIndexedPrimitives<VertexPositionNormalColor>(PrimitiveType.TriangleList, shipChunk.VertexArray, 0, shipChunk.VertexArray.Length, shipChunk.IndexArray, 0, shipChunk.VertexArray.Length / 2);
 
-            drawEffect.DiffuseColor = new Vector3(1f, 1f - hitAlpha, 1f - hitAlpha);
-            foreach (EffectPass pass in drawEffect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-
-                AnimChunk c = shipSprite.AnimChunks[0];
-                if (c == null) continue;
-
-                if (c == null || c.VertexArray == null || c.VertexArray.Length == 0) continue;
-                gd.DrawUserIndexedPrimitives<VertexPositionNormalColor>(PrimitiveType.TriangleList, c.VertexArray, 0, c.VertexArray.Length, c.IndexArray, 0, c.VertexArray.Length / 2);
-
-               
-            }
-
-            
-            drawEffect.World = Matrix.CreateScale(0.75f) * (Matrix.CreateRotationX(orbRotation.X) * Matrix.CreateRotationY(orbRotation.Y) * Matrix.CreateRotationZ(orbRotation.Z)) * Matrix.CreateTranslation(orbPosition);
-
-            drawEffect.DiffuseColor = Color.White.ToVector3();
-
-            foreach (EffectPass pass in drawEffect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-
-                AnimChunk c = shipSprite.AnimChunks[1];
-                if (c == null) continue;
-
-                if (c == null || c.VertexArray == null || c.VertexArray.Length == 0) continue;
-                gd.DrawUserIndexedPrimitives<VertexPositionNormalColor>(PrimitiveType.TriangleList, c.VertexArray, 0, c.VertexArray.Length, c.IndexArray, 0, c.VertexArray.Length / 2);
-            }
+            var orbWorld = Matrix.CreateScale(0.75f) * (Matrix.CreateRotationX(orbRotation.X) * Matrix.CreateRotationY(orbRotation.Y) * Matrix.CreateRotationZ(orbRotation.Z)) * Matrix.CreateTranslation(orbPosition);
+            _voxelEffect.SetTint(Vector3.One);
+            _voxelEffect.Apply(orbWorld, _view, _projection);
+            AnimChunk orbChunk = shipSprite.AnimChunks[1];
+            if (orbChunk != null && orbChunk.VertexArray != null && orbChunk.VertexArray.Length > 0)
+                gd.DrawUserIndexedPrimitives<VertexPositionNormalColor>(PrimitiveType.TriangleList, orbChunk.VertexArray, 0, orbChunk.VertexArray.Length, orbChunk.IndexArray, 0, orbChunk.VertexArray.Length / 2);
         }
 
         public void Move(Vector2 virtualJoystick)
