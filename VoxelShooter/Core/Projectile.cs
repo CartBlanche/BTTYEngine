@@ -10,7 +10,11 @@ namespace VoxelShooter
 {
     public class Projectile
     {
-        const float GRAVITY = 0.03f;
+        const float  GRAVITY = 0.03f;
+        const double ROCKET_LAUNCH_DELAY_MS = 400.0;
+
+        const float ROCKET_TOP_SPEED = 1.5f;
+        const float ROCKET_STEER_STRENGTH   = 0.12f;   // how quickly it turns toward the target
 
         public ProjectileType Type;
 
@@ -41,7 +45,9 @@ namespace VoxelShooter
 
             if (affectedByGravity) Speed.Z += GRAVITY;
 
-            CheckCollisions(gameHero, gameWorld);
+            // Skip collision detection while a rocket is still in its launch-attachment phase.
+            if (!(Type == ProjectileType.Rocket && Time < ROCKET_LAUNCH_DELAY_MS))
+                CheckCollisions(gameHero, gameWorld);
 
             Position += Speed;
 
@@ -50,7 +56,23 @@ namespace VoxelShooter
             switch (Type)
             {
                 case ProjectileType.Rocket:
-                    
+
+                    // ── Warmup phase: stay attached to the ship ───────────────
+                    if (Time < ROCKET_LAUNCH_DELAY_MS)
+                    {
+                        if (Owner is Hero launchOwner)
+                        {
+                            Speed    = Vector3.Zero;
+                            Position = launchOwner.Position + new Vector3(0f, 3f, 0f);
+                        }
+                        break;
+                    }
+
+                    // First frame after warmup — give an initial forward kick.
+                    if (Time - gameTime.ElapsedGameTime.TotalMilliseconds < ROCKET_LAUNCH_DELAY_MS)
+                        Speed = new Vector3(0.5f, 0f, 0f);
+
+                    // ── Homing ───────────────────────────────────────────────
                     // Only re-acquire if we don't already have a live target (lock-on behaviour).
                     if (target == null || !target.Active)
                     {
@@ -72,17 +94,30 @@ namespace VoxelShooter
                         target = nearest;
                     }
                     
-                    if(target!=null)
+                    if (target != null)
                     {
-                        if (target.Position.X > Position.X) Speed.X += 0.03f;
-                        if (target.Position.X < Position.X) Speed.X -= 0.03f;
-                        if (target.Position.Y > Position.Y) Speed.Y += 0.03f;
-                        if (target.Position.Y < Position.Y) Speed.Y -= 0.03f;
-                        Rotation = Matrix.CreateRotationZ(Helper.V2ToAngle(new Vector2(Speed.X, Speed.Y)));
-                        Speed = Vector3.Clamp(Speed, new Vector3(-1f, -1f, 0f), new Vector3(1f, 1f, 0f));
+                        // Direction from rocket to target, normalised.
+                        Vector2 toTarget = new Vector2(target.Position.X - Position.X,
+                                                       target.Position.Y - Position.Y);
+                        float dist = toTarget.Length();
+                        if (dist > 0.001f) toTarget /= dist;
 
+                        // Steer current velocity toward the target direction.
+                        Vector2 vel2 = new Vector2(Speed.X, Speed.Y);
+                        vel2 += toTarget * ROCKET_STEER_STRENGTH;
+
+                        // Maintain constant speed (normalise then scale) so steering
+                        // doesn't slow the rocket when turning sharply.
+                        float currentSpeed = vel2.Length();
+                        if (currentSpeed > 0.001f)
+                            vel2 = vel2 / currentSpeed * Math.Min(currentSpeed, ROCKET_TOP_SPEED);
+
+                        Speed.X = vel2.X;
+                        Speed.Y = vel2.Y;
+                        Rotation = Matrix.CreateRotationZ(Helper.V2ToAngle(vel2));
                     }
 
+                    // Only trail particles once actually flying.
                     if (Helper.Random.Next(5) == 1)
                         ParticleController.Instance.Spawn(Position + new Vector3(Helper.RandomFloat(-0.1f,1f),Helper.RandomFloat(-0.1f,1f),0f) ,
                                                       Vector3.Zero,
