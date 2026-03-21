@@ -8,15 +8,6 @@ using BTTYEngine;
 
 namespace VoxelShooter
 {
-    public enum ProjectileType
-    {
-        Laser1,
-        Laser2,
-        Laser3,
-        Laser4,
-        Rocket
-    }
-
     public class Projectile
     {
         const float GRAVITY = 0.03f;
@@ -60,6 +51,8 @@ namespace VoxelShooter
             {
                 case ProjectileType.Rocket:
                     
+                    // Only re-acquire if we don't already have a live target (lock-on behaviour).
+                    if (target == null || !target.Active)
                     {
                         Enemy nearest = null;
                         float nearestDistSq = float.MaxValue;
@@ -67,7 +60,10 @@ namespace VoxelShooter
                         for (int ei = 0; ei < enemies.Count; ei++)
                         {
                             Enemy e = enemies[ei];
-                            if (!e.Active || e.Position.X < scrollPos - 75f) continue;
+                            if (!e.Active || e.Position.X < scrollPos - 75f)
+                                continue;
+                            if (e.Position.X < Position.X)
+                                continue; // forward filter — ignore enemies behind the rocket
                             float dx = e.Position.X - Position.X;
                             float dy = e.Position.Y - Position.Y;
                             float distSq = dx * dx + dy * dy;
