@@ -2,10 +2,11 @@
   <PropertyGroup>
     <TargetFramework>net9.0-android</TargetFramework>
     <OutputType>Exe</OutputType>
-    <ApplicationId>com.companyname.VoxelShooter</ApplicationId>
+    <ApplicationId>com.btty.VoxelShooter</ApplicationId>
     <ApplicationVersion>1</ApplicationVersion>
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
     <SupportedOSPlatformVersion>23</SupportedOSPlatformVersion>
+    <AssemblyName>VoxelShooter</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Core\Core.csproj" />

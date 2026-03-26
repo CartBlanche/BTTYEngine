@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key>
-	<string>VoxelShooter.iOS</string>
+	<string>VoxelShooter</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.companyname.VoxelShooter.iOS</string>
+	<string>com.btty.VoxelShooter</string>
 	<key>MinimumOSVersion</key>
 	<string>12.2</string>
 	<key>UISupportedInterfaceOrientations</key>
@@ -14,7 +14,7 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>CFBundleName</key>
-	<string>VoxelShooter.iOS</string>
+	<string>VoxelShooter</string>
 	<key>UIRequiresFullScreen</key>
 	<true/>
 	<key>UIStatusBarHidden</key>

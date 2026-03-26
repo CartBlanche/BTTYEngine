@@ -4,6 +4,7 @@
     <OutputType>Exe</OutputType>
     <SupportedOSPlatformVersion>12.2</SupportedOSPlatformVersion>
     <CodesignKey>iPhone Developer</CodesignKey>
+    <AssemblyName>VoxelShooter</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Core\Core.csproj" />
