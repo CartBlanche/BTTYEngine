@@ -111,10 +111,10 @@ VoxelShooter/
 │   ├── Core/               - VoxelShooter game code and content
 │   │   ├── Enemies/        - Enemy types (Asteroid, Omega, Squid, Turret)
 │   │   └── Content/        - .mgcb file and all game assets (.vxs, .png, .tmx, etc.)
-│   ├── Desktop/            - DesktopGL entry point (net9.0)
-│   ├── Windows/            - WindowsDX entry point (net9.0-windows)
-│   ├── Android/            - Android entry point (net9.0-android)
-│   ├── iOS/                - iOS entry point (net9.0-ios)
+│   ├── Desktop/            - DesktopGL entry point (net10.0)
+│   ├── Windows/            - WindowsDX entry point (net10.0-windows)
+│   ├── Android/            - Android entry point (net10.0-android)
+│   ├── iOS/                - iOS entry point (net10.0-ios)
 ├── Dependencies/
 │   ├── TiledLib/               - Tiled map file runtime library
 │   └── TiledContentPipeline/   - MGCB pipeline extension for .tmx files

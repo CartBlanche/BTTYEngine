@@ -93,7 +93,7 @@ jobs:
       uses: actions/upload-artifact@v6
       with:
         name: Android-VoxelShooter
-        path: VoxelShooter/Android/bin/Release/net9.0-android/**/*-Signed.apk
+        path: VoxelShooter/Android/bin/Release/net10.0-android/**/*-Signed.apk
 
   deploy:
     name: Deploy
