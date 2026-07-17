@@ -6,7 +6,7 @@
     <ProjectReference Include="..\..\BTTYEngine\BTTYEngine.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.5">
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.5.4405-develop">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
   </ItemGroup>
